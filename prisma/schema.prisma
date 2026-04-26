@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Report {
+  id           Int      @id @default(autoincrement())
+  address      String   @unique
+  markdown     String
+  archetype    String   @default("UNKNOWN")
+  archetypeLabel String @default("")
+  grade        String   @default("C")
+  netPnl       Float    @default(0)
+  winRate      Float    @default(0)
+  totalFills   Int      @default(0)
+  uniqueAssets Int      @default(0)
+  generatedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Job {
+  id         String   @id
+  address    String
+  status     String   @default("pending")
+  error      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

@@ -1,0 +1,183 @@
+@import "tailwindcss";
+
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap");
+
+:root {
+  --bg: #0a0a0a;
+  --bg-card: #111111;
+  --bg-card-hover: #161616;
+  --border: #222222;
+  --border-bright: #333333;
+  --text: #e8e8e8;
+  --text-muted: #666666;
+  --text-dim: #444444;
+  --green: #00c853;
+  --green-dim: #1a3a2a;
+  --red: #ff3b3b;
+  --red-dim: #3a1a1a;
+  --gold: #f5c518;
+  --gold-dim: #2a2010;
+  --accent: #7c6af7;
+  --accent-dim: #1e1a3a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Noto Sans SC", "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+/* Grade badges */
+.grade-S { background: linear-gradient(135deg, #f5c518, #ff9500); color: #000; }
+.grade-A { background: linear-gradient(135deg, #00c853, #00897b); color: #000; }
+.grade-B { background: linear-gradient(135deg, #2979ff, #7c4dff); color: #fff; }
+.grade-C { background: linear-gradient(135deg, #ff9800, #f44336); color: #fff; }
+.grade-D { background: linear-gradient(135deg, #f44336, #b71c1c); color: #fff; }
+.grade-F { background: linear-gradient(135deg, #212121, #424242); color: #aaa; }
+
+/* Report markdown styling */
+.report-content {
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text);
+}
+
+.report-content h1 {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #e8e8e8, #999);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.report-content h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.report-content h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #bbb;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.report-content p {
+  margin-bottom: 0.75rem;
+  color: #ccc;
+}
+
+.report-content blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-dim);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  color: #ccc;
+}
+
+.report-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+}
+
+.report-content th {
+  background: #1a1a1a;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  color: #999;
+  font-weight: 500;
+  border-bottom: 1px solid var(--border-bright);
+}
+
+.report-content td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: #ccc;
+}
+
+.report-content tr:hover td {
+  background: #141414;
+}
+
+.report-content code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.85em;
+  background: #1a1a1a;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  color: var(--gold);
+}
+
+.report-content pre {
+  background: #111;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.report-content pre code {
+  background: none;
+  padding: 0;
+  color: #ccc;
+  font-size: 0.875rem;
+}
+
+.report-content strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.report-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.5rem 0;
+}
+
+/* Pnl colors in text */
+.pnl-pos { color: var(--green); }
+.pnl-neg { color: var(--red); }
+
+/* Loading animation */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.loading-dot {
+  animation: pulse-glow 1.4s ease-in-out infinite;
+}
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
