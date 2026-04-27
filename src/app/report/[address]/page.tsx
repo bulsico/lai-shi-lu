@@ -124,11 +124,7 @@ export default function ReportPage() {
 
   function handleShare() {
     if (!report) return;
-    const pnlStr =
-      report.netPnl >= 0
-        ? `+$${Math.abs(report.netPnl).toFixed(0)}`
-        : `-$${Math.abs(report.netPnl).toFixed(0)}`;
-    const text = `刚用AI分析了我的 Hyperliquid 交易历史\n\n我的交易类型：「${report.archetypeLabel}」\n综合评级：${report.grade}级\n净盈亏：${pnlStr} · 胜率：${(report.winRate * 100).toFixed(1)}%\n\n交易来时路 → lai-shi-lu.com`;
+    const text = `刚用AI分析了我的 Hyperliquid 交易历史\n\n我的交易类型：「${report.archetypeLabel}」\n综合评级：${report.grade}级 · 胜率：${(report.winRate * 100).toFixed(1)}%\n\n交易来时路 → lai-shi-lu.com`;
     const encoded = encodeURIComponent(text);
     window.open(`https://twitter.com/intent/tweet?text=${encoded}`, "_blank");
   }
@@ -223,20 +219,6 @@ export default function ReportPage() {
     `\`${report.address}\``
   );
 
-  const pnlPositive = report.netPnl >= 0;
-  const pnlValue = `${pnlPositive ? "+" : ""}$${
-    Math.abs(report.netPnl) >= 10000
-      ? (Math.abs(report.netPnl) / 10000).toFixed(1) + "万"
-      : Math.abs(report.netPnl).toFixed(0)
-  }`;
-
-  const winColor =
-    report.winRate >= 0.5
-      ? "var(--green)"
-      : report.winRate >= 0.4
-      ? "#FF8800"
-      : "var(--red)";
-
   return (
     <main className="min-h-screen" style={{ background: "var(--bg)" }}>
       {/* Danger stripe */}
@@ -293,28 +275,6 @@ export default function ReportPage() {
             ⚠ 你的成交记录超过 10,000 笔，本报告仅覆盖最近 10k 条数据，不代表完整交易历史。
           </div>
         )}
-
-        {/* Stats — 3 sharp cards */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          <StatCard
-            label="净盈亏"
-            value={pnlValue}
-            color={pnlPositive ? "var(--green)" : "var(--red)"}
-            accentBorder={pnlPositive ? "var(--green)" : "var(--red)"}
-          />
-          <StatCard
-            label="胜率"
-            value={`${(report.winRate * 100).toFixed(1)}%`}
-            color={winColor}
-            accentBorder={winColor}
-          />
-          <StatCard
-            label="成交笔数"
-            value={report.totalFills.toLocaleString()}
-            color="var(--text)"
-            accentBorder="var(--border-bright)"
-          />
-        </div>
 
         {/* Report markdown */}
         <ReportRenderer markdown={processedMarkdown} address={report.address} />
