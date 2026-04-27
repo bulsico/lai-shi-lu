@@ -83,6 +83,8 @@ cp context/market-context.md          你的项目/context/
 
 ## 自己部署网站
 
+### 首次部署
+
 ```bash
 git clone https://github.com/bulsico/lai-shi-lu.git
 cd lai-shi-lu
@@ -92,11 +94,8 @@ pnpm install
 cp .env.example .env
 pnpm prisma db push
 
-# 开发模式
-pnpm dev
-
-# 生产部署（需要 Claude Code CLI 已安装）
-pnpm build && pnpm start
+# 构建
+pnpm build
 ```
 
 **环境变量：**
@@ -106,6 +105,33 @@ pnpm build && pnpm start
 | `DATABASE_URL` | SQLite 路径，默认 `file:./dev.db` |
 
 网站使用你本地安装的 Claude Code CLI（`claude -p`）生成报告，无需购买 Anthropic API。
+
+### VPS 持久化运行（systemd）
+
+仓库内附带 `lai-shi-lu.service`，根据实际路径修改后安装：
+
+```bash
+# 根据实际情况编辑 WorkingDirectory / ExecStart / User 路径
+sudo cp lai-shi-lu.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable lai-shi-lu
+sudo systemctl start lai-shi-lu
+```
+
+### 更新代码后重新构建并重启
+
+```bash
+git pull
+pnpm install        # 如果依赖有变化
+pnpm build
+sudo systemctl restart lai-shi-lu
+```
+
+查看日志：
+
+```bash
+sudo journalctl -u lai-shi-lu -f
+```
 
 ---
 

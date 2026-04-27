@@ -7,10 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 pnpm dev              # dev server on :3000
 pnpm build            # prisma generate + next build
-pnpm start            # production server on :3004
+pnpm start            # production server on :3000
 pnpm tsc --noEmit     # type-check (no test suite)
 pnpm prisma:push      # apply schema changes to SQLite
 pnpm prisma:studio    # browse DB
+
+# After code changes on VPS:
+git pull && pnpm install && pnpm build && sudo systemctl restart lai-shi-lu
+sudo journalctl -u lai-shi-lu -f   # tail logs
 
 # Portable skill scripts
 pnpm fetch-hl 0x...                              # fetch HL fills + open positions
