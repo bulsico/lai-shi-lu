@@ -5,14 +5,49 @@ import remarkGfm from "remark-gfm";
 
 interface Props {
   markdown: string;
+  address?: string;
 }
 
-export default function ReportRenderer({ markdown }: Props) {
+function nodeToString(children: React.ReactNode): string {
+  if (typeof children === "string") return children;
+  if (Array.isArray(children)) return children.map(nodeToString).join("");
+  if (children && typeof children === "object" && "props" in (children as object)) {
+    const el = children as React.ReactElement<{ children?: React.ReactNode }>;
+    return nodeToString(el.props.children);
+  }
+  return "";
+}
+
+export default function ReportRenderer({ markdown, address }: Props) {
   return (
     <div className="report-content">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
+          h2({ children }) {
+            if (address && nodeToString(children).includes("基本档案")) {
+              return (
+                <h2 className="flex items-center flex-wrap gap-x-3">
+                  {children}
+                  <a
+                    href={`https://hyperdash.info/trader/${address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-80 transition-opacity"
+                    style={{
+                      color: "var(--gold)",
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: "0.75rem",
+                      fontWeight: 400,
+                    }}
+                  >
+                    Hyperdash ↗
+                  </a>
+                </h2>
+              );
+            }
+            return <h2>{children}</h2>;
+          },
           td({ children, ...props }) {
             const text = String(children);
             let color = "";

@@ -142,7 +142,7 @@ export default function ReportPage() {
               style={{
                 height: "100%",
                 background: "var(--accent)",
-                animation: "progress-bar 45s linear forwards",
+                animation: "progress-bar 280s linear forwards",
                 width: "0%",
               }}
             />
@@ -154,7 +154,7 @@ export default function ReportPage() {
             <span>
               {address.slice(0, 10)}...{address.slice(-6)}
             </span>
-            <span>30–60s</span>
+            <span>约5分钟</span>
           </div>
           <p className="text-xs mt-6" style={{ color: "var(--text-dim)", ...MONO }}>
             // 可关闭此页面，稍后用相同 URL 查看报告
@@ -197,6 +197,11 @@ export default function ReportPage() {
   }
 
   if (!report) return null;
+
+  const processedMarkdown = report.markdown.replace(
+    /`0x[0-9a-fA-F]+\.\.\.`/,
+    `\`${report.address}\``
+  );
 
   const pnlPositive = report.netPnl >= 0;
   const pnlValue = `${pnlPositive ? "+" : ""}$${
@@ -252,25 +257,6 @@ export default function ReportPage() {
         </div>
       </div>
 
-      {/* Address bar */}
-      <div
-        className="px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-1"
-        style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-card)" }}
-      >
-        <span className="text-xs break-all" style={{ color: "var(--text-muted)", ...MONO }}>
-          {report.address}
-        </span>
-        <a
-          href={`https://hyperdash.info/trader/${report.address}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs shrink-0 hover:opacity-80 transition-opacity"
-          style={{ color: "var(--gold)", ...MONO }}
-        >
-          Hyperdash ↗
-        </a>
-      </div>
-
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Truncation warning */}
@@ -311,7 +297,7 @@ export default function ReportPage() {
         </div>
 
         {/* Report markdown */}
-        <ReportRenderer markdown={report.markdown} />
+        <ReportRenderer markdown={processedMarkdown} address={report.address} />
 
         {/* Share card */}
         <div
@@ -327,7 +313,7 @@ export default function ReportPage() {
               className="px-5 py-2.5 text-sm font-bold tracking-widest text-white transition-opacity hover:opacity-80"
               style={{ background: "var(--accent)", ...MONO }}
             >
-              发推特 / Twitter
+              发推特
             </button>
             <button
               onClick={() => {
@@ -335,7 +321,7 @@ export default function ReportPage() {
                 const text = `我的交易类型：「${report.archetypeLabel}」\n评级：${report.grade}级\n\n交易来时路帮我分析了我的链上交易历史\n数据不会骗人，AI也不会惯着你\n\nlai-shi-lu.com`;
                 navigator.clipboard.writeText(text);
               }}
-              className="px-5 py-2.5 text-sm font-bold tracking-widest transition-colors"
+              className="px-5 py-2.5 text-sm font-bold tracking-widest transition-opacity hover:opacity-80"
               style={{
                 background: "transparent",
                 color: "var(--text-muted)",
@@ -356,7 +342,7 @@ export default function ReportPage() {
                 a.click();
                 URL.revokeObjectURL(url);
               }}
-              className="px-5 py-2.5 text-sm font-bold tracking-widest transition-colors"
+              className="px-5 py-2.5 text-sm font-bold tracking-widest transition-opacity hover:opacity-80"
               style={{
                 background: "transparent",
                 color: "var(--gold)",
