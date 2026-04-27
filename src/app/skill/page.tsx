@@ -170,6 +170,7 @@ cp context/market-context.md         你的项目/context/`}</CodeBlock>
         <Section label="注意事项">
           <ul className="space-y-2">
             {[
+              "盈亏数据仅供参考，不保证精确——资金费率、未实现盈亏等因素可能导致与实际有出入；报告的价值在于识别交易行为模式和趋势，不是精确对账",
               "HL API 每个地址最多返回约 10,000 条成交记录",
               "成交少于 10 笔 / 历史少于 3 天的地址不会生成报告",
               "报告保存到 data/reports/ 目录，纯 Markdown 格式",
