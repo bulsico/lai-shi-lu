@@ -4,10 +4,15 @@
  * Usage (CLI):
  *   tsx scripts/parse-rh.ts path/to/activity.csv [--out data/tmp/rh-summary.json]
  *
- * Robinhood CSV columns (standard format):
+ * Robinhood CSV columns (standard stock/options format):
  *   Activity Date, Instrument, Description, Trans Code, Quantity, Price, Amount
  *
- * Trans codes handled:
+ * Robinhood CSV columns (crypto order export format — auto-detected):
+ *   UUID, Time Entered, Symbol, Side, Quantity, State, Order Type,
+ *   Leaves Quantity, Entered Price, Average Price, Notional
+ *   Only Filled rows are imported; Average Price is used as fill price.
+ *
+ * Trans codes handled (standard format):
  *   Buy / BTO → open long
  *   Sell / STC → close long
  *   STO → open short
@@ -63,11 +68,50 @@ function parseNum(s: string): number {
   return parseFloat(s.replace(/[$, ]/g, "")) || 0;
 }
 
+// Robinhood crypto order export: UUID, Time Entered, Symbol, Side, Quantity, State, ...Average Price
+function parseCryptoOrderCSV(lines: string[], header: string[]): RHRow[] {
+  const col = (name: string): number => header.indexOf(name);
+  const timeIdx = col("time entered");
+  const symbolIdx = col("symbol");
+  const sideIdx = col("side");
+  const qtyIdx = col("quantity");
+  const stateIdx = col("state");
+  const avgPriceIdx = col("average price");
+
+  const rows: RHRow[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = splitLine(lines[i]);
+    if ((parts[stateIdx] ?? "").trim().toLowerCase() !== "filled") continue;
+
+    // Time Entered: "MM/DD/YYYY, HH:MM:SS"
+    const datePart = (parts[timeIdx] ?? "").split(",")[0].trim();
+    const date = normalizeDate(datePart);
+    if (!date) continue;
+
+    const instrument = (parts[symbolIdx] ?? "").toUpperCase();
+    const rawSide = (parts[sideIdx] ?? "").toUpperCase();
+    const transCode = rawSide === "BUY" ? "BUY" : rawSide === "SELL" ? "SELL" : "";
+    if (!transCode || !instrument) continue;
+
+    const qty = Math.abs(parseNum(parts[qtyIdx] ?? ""));
+    const price = Math.abs(parseNum(parts[avgPriceIdx] ?? ""));
+    if (qty === 0) continue;
+
+    rows.push({ date, instrument, transCode, qty, price });
+  }
+  return rows.sort((a, b) => a.date.localeCompare(b.date));
+}
+
 function parseRHCSV(content: string): RHRow[] {
   const lines = content.split("\n").map((l) => l.trim()).filter(Boolean);
   if (lines.length < 2) return [];
 
   const header = splitLine(lines[0]).map((h) => h.toLowerCase());
+
+  // Auto-detect Robinhood crypto order export format
+  if (header.includes("time entered") && header.includes("average price")) {
+    return parseCryptoOrderCSV(lines, header);
+  }
 
   const col = (name: string, ...aliases: string[]): number => {
     for (const n of [name, ...aliases]) {
