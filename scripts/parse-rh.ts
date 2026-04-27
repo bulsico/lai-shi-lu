@@ -460,6 +460,32 @@ function emptyStats(label: string): TradeSummary {
   };
 }
 
+// ── Multi-file merge ──────────────────────────────────────────────────────────
+
+function mergeAndDedup(csvPaths: string[]): RHRow[] {
+  const seen = new Set<string>();
+  const all: RHRow[] = [];
+
+  for (const csvPath of csvPaths) {
+    const content = fs.readFileSync(csvPath, "utf-8");
+    const rows = parseRHCSV(content);
+    let added = 0;
+    for (const row of rows) {
+      // Dedup key: date + instrument + transCode + qty + price
+      // Handles overlapping exports from the same period
+      const key = `${row.date}|${row.instrument}|${row.transCode}|${row.qty}|${row.price}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        all.push(row);
+        added++;
+      }
+    }
+    console.error(`  ${path.basename(csvPath)}: ${rows.length} rows parsed, ${added} unique`);
+  }
+
+  return all.sort((a, b) => a.date.localeCompare(b.date));
+}
+
 // ── CLI entry ─────────────────────────────────────────────────────────────────
 
 const isMain =
@@ -469,19 +495,25 @@ const isMain =
 if (isMain) {
   const outIdx = process.argv.indexOf("--out");
   const outPath = outIdx !== -1 ? process.argv[outIdx + 1] : null;
-  const csvPath = process.argv.find(
-    (a, i) => i >= 2 && !a.startsWith("--") && process.argv[i - 1] !== "--out"
-  );
 
-  if (!csvPath) {
-    console.error("Usage: tsx scripts/parse-rh.ts path/to/activity.csv [--out summary.json]");
+  // Collect all positional args (not flags, not the value after --out)
+  const csvPaths: string[] = [];
+  for (let i = 2; i < process.argv.length; i++) {
+    const arg = process.argv[i];
+    if (arg === "--out") { i++; continue; }
+    if (!arg.startsWith("--")) csvPaths.push(arg);
+  }
+
+  if (csvPaths.length === 0) {
+    console.error("Usage: tsx scripts/parse-rh.ts file1.csv [file2.csv ...] [--out summary.json]");
     process.exit(1);
   }
 
-  const content = fs.readFileSync(csvPath, "utf-8");
-  const rows = parseRHCSV(content);
+  const rows = mergeAndDedup(csvPaths);
   const closed = runFIFO(rows);
-  const label = path.basename(csvPath, path.extname(csvPath));
+  const label = csvPaths.length === 1
+    ? path.basename(csvPaths[0], path.extname(csvPaths[0]))
+    : "rh-combined";
   const summary = computeRHStats(closed, label);
   const json = JSON.stringify(summary, null, 2);
 

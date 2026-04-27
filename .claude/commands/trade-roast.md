@@ -2,7 +2,8 @@
 
 **用法:**
 - `/trade-roast 0x123...` — 分析某个 Hyperliquid 地址
-- `/trade-roast --rh stocks.csv` — 分析 Robinhood 股票/加密货币 CSV
+- `/trade-roast --rh stocks.csv` — 分析 Robinhood CSV（单文件）
+- `/trade-roast --rh 2020-2024.csv 2024-2025.csv crypto.csv` — 合并多个 CSV 再分析（自动去重）
 
 ---
 
@@ -30,11 +31,13 @@ pnpm tsx scripts/analyze.ts --fills data/tmp/$ADDRESS-fills.json --out data/tmp/
 
 ### Robinhood CSV
 
-如果参数是 `--rh [文件路径]`，执行：
+如果参数是 `--rh [一个或多个文件路径]`，执行：
 
 ```bash
-pnpm tsx scripts/parse-rh.ts $CSV_PATH --out data/tmp/rh-summary.json
+pnpm tsx scripts/parse-rh.ts $CSV_PATH_1 [$CSV_PATH_2 ...] --out data/tmp/rh-summary.json
 ```
+
+（将所有 `--rh` 后面的文件路径都传给脚本，脚本会自动合并、去重、按日期排序后再做 FIFO 分析。）
 
 然后读取 `data/tmp/rh-summary.json`。
 
