@@ -340,6 +340,14 @@ export default function Home() {
           <span>// 仅供娱乐，不构成投资建议</span>
           <div className="flex gap-4">
             <a
+              href="https://x.com/fol_cap"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--text-muted)" }}
+            >
+              @fol_cap ↗
+            </a>
+            <a
               href="https://github.com/bulsico/lai-shi-lu"
               style={{ color: "var(--accent)" }}
               target="_blank"
