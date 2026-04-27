@@ -19,11 +19,22 @@ function nodeToString(children: React.ReactNode): string {
 }
 
 export default function ReportRenderer({ markdown, address }: Props) {
+  // Replace ━━━ divider lines with markdown HR so our hr() component handles them
+  // and they don't render as an overflowing text paragraph on mobile
+  const processedMarkdown = markdown.replace(/^━+$/gm, "---");
+
   return (
     <div className="report-content">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
+          table({ children }) {
+            return (
+              <div className="overflow-x-auto my-4" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+                <table>{children}</table>
+              </div>
+            );
+          },
           h2({ children }) {
             if (address && nodeToString(children).includes("基本档案")) {
               return (
@@ -178,7 +189,7 @@ export default function ReportRenderer({ markdown, address }: Props) {
           },
         }}
       >
-        {markdown}
+        {processedMarkdown}
       </ReactMarkdown>
     </div>
   );

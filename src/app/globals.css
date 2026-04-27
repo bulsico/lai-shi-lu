@@ -25,6 +25,13 @@
   box-sizing: border-box;
 }
 
+/* On mobile the address input and submit button stack; restore the right border */
+@media (min-width: 640px) {
+  .address-input {
+    border-right: none !important;
+  }
+}
+
 html,
 body {
   background: var(--bg);

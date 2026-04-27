@@ -15,8 +15,9 @@ function CodeBlock({ children }: { children: string }) {
         background: "#0A0A0A",
         border: "1px solid var(--border)",
         color: "var(--text-muted)",
+        WebkitOverflowScrolling: "touch",
         ...MONO,
-      }}
+      } as React.CSSProperties}
     >
       {children}
     </pre>

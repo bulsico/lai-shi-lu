@@ -138,12 +138,11 @@ export default function Home() {
                     onChange={(e) => setAddress(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter" && !loading) handleSubmit(); }}
                     placeholder="0x... 粘贴你的 Hyperliquid 地址"
-                    className="flex-1 px-4 py-3.5 text-sm outline-none w-full"
+                    className="address-input flex-1 px-4 py-3.5 text-sm outline-none w-full"
                     style={{
                       background: "var(--bg-card)",
                       color: "var(--text)",
                       border: `1px solid ${inputBorder}`,
-                      borderRight: "none",
                       caretColor: "var(--accent)",
                       fontFamily: '"JetBrains Mono", monospace',
                       fontSize: "0.8rem",
