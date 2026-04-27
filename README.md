@@ -46,6 +46,7 @@ cp context/market-context.md          你的项目/context/
 ```
 
 **如何从 Robinhood 导出 CSV：**
+
 - 股票/期权：Account → Report → Generate Report
 - 加密货币：有点智障，需要找人工客服要csv，因为现在report只能生成individual或者retirement，crypto不支持
 
@@ -83,7 +84,7 @@ cp context/market-context.md          你的项目/context/
 ## 自己部署网站
 
 ```bash
-git clone https://github.com/yourusername/lai-shi-lu.git
+git clone https://github.com/bulsico/lai-shi-lu.git
 cd lai-shi-lu
 pnpm install
 
@@ -100,8 +101,8 @@ pnpm build && pnpm start
 
 **环境变量：**
 
-| 变量 | 说明 |
-|------|------|
+| 变量           | 说明                              |
+| -------------- | --------------------------------- |
 | `DATABASE_URL` | SQLite 路径，默认 `file:./dev.db` |
 
 网站使用你本地安装的 Claude Code CLI（`claude -p`）生成报告，无需购买 Anthropic API。
@@ -132,14 +133,14 @@ lai-shi-lu/
 
 ## 交易人格类型
 
-| 类型 | 名称 | 典型特征 |
-|------|------|---------|
-| `TREND_MASTER` | 右侧交易大师 | 胜率>55%，盈利，懂止损 |
+| 类型            | 名称           | 典型特征                         |
+| --------------- | -------------- | -------------------------------- |
+| `TREND_MASTER`  | 右侧交易大师   | 胜率>55%，盈利，懂止损           |
 | `KNIFE_CATCHER` | 左侧接刀殉道者 | 越跌越买，平均亏损远大于平均盈利 |
-| `OVERTRADE` | 过度交易内耗型 | 日均成交>10笔，给交易所打工 |
-| `SCATTER_GUN` | 机枪扫射型 | 交易30+个资产，没有专注的edge |
-| `PANIC_TRADER` | 情绪化清仓机 | 爆仓多，成交量波动剧烈 |
-| `DIAMOND_HANDS` | 钻石手候鸟 | 很少交易，持有周期极长 |
+| `OVERTRADE`     | 过度交易内耗型 | 日均成交>10笔，给交易所打工      |
+| `SCATTER_GUN`   | 机枪扫射型     | 交易30+个资产，没有专注的edge    |
+| `PANIC_TRADER`  | 情绪化清仓机   | 爆仓多，成交量波动剧烈           |
+| `DIAMOND_HANDS` | 钻石手候鸟     | 很少交易，持有周期极长           |
 
 ---
 
