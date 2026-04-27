@@ -5,9 +5,9 @@ After=network.target
 [Service]
 Type=simple
 User=exedev
-WorkingDirectory=/home/exedev/project-j-01
-EnvironmentFile=/home/exedev/project-j-01/.env
-ExecStart=/home/exedev/.local/bin/node /home/exedev/project-j-01/node_modules/.bin/next start -p 3000
+WorkingDirectory=/home/exedev/lai-shi-lu
+EnvironmentFile=/home/exedev/lai-shi-lu/.env
+ExecStart=/home/exedev/.local/bin/node /home/exedev/lai-shi-lu/node_modules/.bin/next start -p 3000
 Restart=on-failure
 RestartSec=5
 
