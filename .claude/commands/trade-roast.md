@@ -10,11 +10,20 @@
 
 ### Hyperliquid 地址
 
-如果参数是 `0x` 开头的地址，执行：
+如果参数是 `0x` 开头的地址：
+
+**先检查 summary 是否已经存在**（网站模式下 API 会提前生成好）：
 
 ```bash
-tsx scripts/fetch-hl.ts $ADDRESS --out data/tmp/$ADDRESS-fills.json
-tsx scripts/analyze.ts --fills data/tmp/$ADDRESS-fills.json --out data/tmp/$ADDRESS-summary.json
+ls data/tmp/$ADDRESS-summary.json 2>/dev/null && echo "exists" || echo "missing"
+```
+
+- 如果文件**已存在**：直接读取 `data/tmp/$ADDRESS-summary.json`，跳过数据获取步骤。
+- 如果文件**不存在**（本地 portable 模式）：运行以下命令获取数据：
+
+```bash
+pnpm tsx scripts/fetch-hl.ts $ADDRESS --out data/tmp/$ADDRESS-fills.json
+pnpm tsx scripts/analyze.ts --fills data/tmp/$ADDRESS-fills.json --out data/tmp/$ADDRESS-summary.json
 ```
 
 然后读取 `data/tmp/$ADDRESS-summary.json`。
@@ -24,7 +33,7 @@ tsx scripts/analyze.ts --fills data/tmp/$ADDRESS-fills.json --out data/tmp/$ADDR
 如果参数是 `--rh [文件路径]`，执行：
 
 ```bash
-tsx scripts/parse-rh.ts $CSV_PATH --out data/tmp/rh-summary.json
+pnpm tsx scripts/parse-rh.ts $CSV_PATH --out data/tmp/rh-summary.json
 ```
 
 然后读取 `data/tmp/rh-summary.json`。
