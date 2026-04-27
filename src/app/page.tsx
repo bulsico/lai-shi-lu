@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import SiteStats from "@/components/SiteStats";
 
 const ARCHETYPES = [
-  { label: "过度交易内耗型", color: "#FF2D78", bg: "rgba(255,45,120,0.1)" },
-  { label: "左侧接刀殉道者", color: "#FF9500", bg: "rgba(255,149,0,0.12)" },
-  { label: "机枪扫射型", color: "#B45309", bg: "rgba(250,204,21,0.2)" },
-  { label: "右侧交易大师", color: "#00A846", bg: "rgba(0,200,83,0.1)" },
-  { label: "情绪化清仓机", color: "#7C3AED", bg: "rgba(124,58,237,0.1)" },
-  { label: "钻石手候鸟", color: "#0891B2", bg: "rgba(6,182,212,0.1)" },
+  { label: "过度交易内耗型", accent: "#FF1A2E" },
+  { label: "左侧接刀殉道者", accent: "#FF8800" },
+  { label: "机枪扫射型", accent: "#FFD000" },
+  { label: "右侧交易大师", accent: "#00E85A" },
+  { label: "情绪化清仓机", accent: "#00C8FF" },
+  { label: "钻石手候鸟", accent: "#FF69B4" },
 ];
 
 export default function Home() {
@@ -19,6 +19,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [focused, setFocused] = useState(false);
+  const [existingReport, setExistingReport] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,7 +29,6 @@ export default function Home() {
       setError("请输入有效的 Hyperliquid 地址（0x 开头，42位十六进制）");
       return;
     }
-
     setLoading(true);
     try {
       const res = await fetch("/api/analyze", {
@@ -43,202 +43,225 @@ export default function Home() {
         return;
       }
       if (data.status === "done") {
-        router.push(`/report/${trimmed.toLowerCase()}`);
+        setExistingReport(true);
+        setTimeout(() => router.push(`/report/${trimmed.toLowerCase()}`), 1500);
+        return;
       } else if (data.sessionId) {
-        router.push(
-          `/report/${trimmed.toLowerCase()}?session=${data.sessionId}`,
-        );
+        router.push(`/report/${trimmed.toLowerCase()}?session=${data.sessionId}`);
       }
     } catch {
       setError("网络错误，请检查连接后重试");
-    } finally {
       setLoading(false);
     }
   }
 
+  const inputBorder = error
+    ? "var(--red)"
+    : focused
+    ? "var(--accent)"
+    : "var(--border)";
+
   return (
-    <main className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Background blobs */}
-      <div
-        className="bg-blob w-[500px] h-[500px]"
-        style={{ top: "-8rem", left: "-8rem", background: "#FF2D78" }}
-      />
-      <div
-        className="bg-blob w-96 h-96"
-        style={{ top: "30%", right: "-6rem", background: "#7C3AED" }}
-      />
-      <div
-        className="bg-blob w-80 h-80"
-        style={{ bottom: "8rem", left: "30%", background: "#06B6D4" }}
-      />
+    <main className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
+      {/* Danger stripe */}
+      <div style={{ height: 3, background: "var(--accent)", flexShrink: 0 }} />
 
       {/* Hero */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 pt-16 pb-12">
-        {/* Mirror emoji */}
-        <div
-          className="text-7xl mb-6 select-none"
-          style={{ animation: "float 3s ease-in-out infinite" }}
-        >
-          🪞
-        </div>
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-16">
+        {/* Title block */}
+        <div className="w-full max-w-lg mb-10">
+          <div
+            className="font-mono text-xs tracking-widest mb-3"
+            style={{ color: "var(--accent)", fontFamily: '"JetBrains Mono", monospace' }}
+          >
+            HYPERLIQUID · AI TRADING REVIEW
+          </div>
 
-        {/* Title */}
-        <div className="text-center mb-10">
           <h1
-            className="text-6xl font-black tracking-tight mb-3"
+            className="font-black leading-none mb-3"
             style={{
-              background:
-                "linear-gradient(135deg, #FF2D78 0%, #7C3AED 50%, #06B6D4 100%)",
-              backgroundSize: "200% 200%",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              animation: "gradient-shift 4s ease infinite",
+              fontSize: "clamp(3.2rem, 12vw, 5.5rem)",
+              color: "var(--text)",
+              fontFamily: '"Noto Sans SC", sans-serif',
+              letterSpacing: "-0.01em",
+              animation: "flicker 8s ease-in-out infinite",
             }}
           >
             交易来时路
           </h1>
+
+          <div
+            style={{
+              height: 4,
+              background: "var(--accent)",
+              width: "100%",
+              marginBottom: "1rem",
+            }}
+          />
+
           <p
-            className="text-base font-semibold mt-2 max-w-xs mx-auto leading-relaxed"
-            style={{ color: "#6B5F80" }}
+            className="text-sm font-semibold"
+            style={{ color: "var(--text-muted)" }}
           >
-            用AI蒸馏你的交易历史 ✨
-          </p>
-          <p className="text-sm mt-1" style={{ color: "#A89EC4" }}>
-            数据不会骗人，AI也不会惯着你
+            用AI蒸馏你的交易历史 · 数据不会骗人，AI也不会惯着你
           </p>
         </div>
 
-        {/* Form card */}
+        {/* Form */}
         <div className="w-full max-w-lg">
-          <div
-            className="rounded-3xl p-2 transition-all duration-300"
-            style={{
-              background: "#fff",
-              boxShadow: focused
-                ? "0 0 0 4px rgba(124,58,237,0.25), 0 16px 48px rgba(124,58,237,0.15)"
-                : "0 8px 32px rgba(0,0,0,0.1)",
-              border: error ? "2px solid #FF2D55" : "2px solid transparent",
-            }}
-          >
-            <form
-              onSubmit={handleSubmit}
-              className="flex flex-col sm:flex-row gap-2"
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="0x... 粘贴你的 Hyperliquid 地址"
+              className="flex-1 px-4 py-3.5 text-sm outline-none w-full"
+              style={{
+                background: "var(--bg-card)",
+                color: "var(--text)",
+                border: `1px solid ${inputBorder}`,
+                borderRight: "none",
+                caretColor: "var(--accent)",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "0.8rem",
+              }}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              disabled={loading}
+              spellCheck={false}
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-3.5 font-bold text-sm tracking-widest whitespace-nowrap transition-colors"
+              style={{
+                background: loading ? "var(--bg-card)" : "var(--accent)",
+                color: loading ? "var(--text-dim)" : "#fff",
+                border: `1px solid ${loading ? "var(--border)" : "var(--accent)"}`,
+                cursor: loading ? "not-allowed" : "pointer",
+                fontFamily: '"JetBrains Mono", monospace',
+                letterSpacing: "0.06em",
+              }}
             >
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="0x... 粘贴你的 Hyperliquid 地址"
-                className="flex-1 px-5 py-3.5 rounded-2xl text-sm font-mono outline-none bg-transparent"
-                style={{ color: "#0D0616", caretColor: "#7C3AED" }}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                disabled={loading}
-                spellCheck={false}
-              />
-              <button
-                type="submit"
-                disabled={loading || !address.trim()}
-                className="px-6 py-3.5 rounded-2xl font-bold text-sm whitespace-nowrap transition-all duration-200"
-                style={{
-                  background:
-                    loading || !address.trim()
-                      ? "linear-gradient(135deg, #DDD6FE, #E9D5FF)"
-                      : "linear-gradient(135deg, #FF2D78, #7C3AED)",
-                  color: loading || !address.trim() ? "#A89EC4" : "#fff",
-                  boxShadow:
-                    loading || !address.trim()
-                      ? "none"
-                      : "0 4px 16px rgba(124,58,237,0.4)",
-                }}
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <span>分析中</span>
-                    <span className="flex gap-1 items-center">
-                      <span className="loading-dot w-1.5 h-1.5 rounded-full bg-current inline-block" />
-                      <span className="loading-dot w-1.5 h-1.5 rounded-full bg-current inline-block" />
-                      <span className="loading-dot w-1.5 h-1.5 rounded-full bg-current inline-block" />
-                    </span>
-                  </span>
-                ) : (
-                  "开始分析 🚀"
-                )}
-              </button>
-            </form>
-          </div>
+              {loading ? (
+                <>分析中<span className="cursor-blink">_</span></>
+              ) : (
+                "分析 →"
+              )}
+            </button>
+          </form>
 
           {error && (
             <p
-              className="text-xs px-2 mt-2 font-semibold"
-              style={{ color: "#FF2D55" }}
+              className="text-xs mt-2"
+              style={{ color: "var(--red)", fontFamily: '"JetBrains Mono", monospace' }}
             >
-              {error}
+              ⚠ {error}
             </p>
           )}
 
           <p
-            className="text-center text-xs mt-4 font-medium"
-            style={{ color: "#C4B5FD" }}
+            className="text-xs mt-3"
+            style={{ color: "var(--text-dim)", fontFamily: '"JetBrains Mono", monospace' }}
           >
-            只需要公开地址，无需签名或授权 · HL API 最多返回约 10k 条成交记录
+            // 只需要公开地址，无需签名或授权 · HL API 最多约 10k 条成交记录
           </p>
         </div>
 
-        {/* Archetype pills */}
-        <div className="mt-14 flex flex-wrap justify-center gap-2 max-w-md">
-          {ARCHETYPES.map(({ label, color, bg }) => (
-            <span
-              key={label}
-              className="px-4 py-1.5 rounded-full text-xs font-bold"
-              style={{
-                background: bg,
-                color,
-                border: `1.5px solid ${color}40`,
-              }}
-            >
-              {label}
-            </span>
-          ))}
+        {/* Archetype chips */}
+        <div className="mt-12 w-full max-w-lg">
+          <div
+            className="text-xs mb-3 tracking-widest"
+            style={{
+              color: "var(--text-dim)",
+              fontFamily: '"JetBrains Mono", monospace',
+            }}
+          >
+            YOUR_ARCHETYPE = ?
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {ARCHETYPES.map(({ label, accent }) => (
+              <span
+                key={label}
+                className="px-3 py-1.5 text-xs font-bold"
+                style={{
+                  borderLeft: `3px solid ${accent}`,
+                  background: `${accent}14`,
+                  color: accent,
+                  fontFamily: '"Noto Sans SC", sans-serif',
+                  letterSpacing: "0.02em",
+                }}
+              >
+                {label}
+              </span>
+            ))}
+          </div>
         </div>
-        <p className="text-xs mt-3 font-semibold" style={{ color: "#A89EC4" }}>
-          你是哪种交易员？👇
-        </p>
       </div>
 
-      {/* Stats bar */}
-      <div className="relative z-10">
-        <SiteStats />
-      </div>
+      {/* Stats */}
+      <SiteStats />
+
+      {/* Existing report overlay */}
+      {existingReport && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: "rgba(13,13,13,0.97)" }}
+        >
+          <div className="w-full max-w-sm">
+            <div
+              className="text-xs tracking-widest mb-4"
+              style={{ color: "var(--accent)", fontFamily: '"JetBrains Mono", monospace' }}
+            >
+              EXISTING REPORT FOUND
+            </div>
+            <div
+              className="text-xl font-black mb-2"
+              style={{ color: "var(--text)", fontFamily: '"Noto Sans SC", sans-serif' }}
+            >
+              已有历史报告
+            </div>
+            <div
+              className="text-sm"
+              style={{ color: "var(--text-muted)", fontFamily: '"JetBrains Mono", monospace' }}
+            >
+              正在加载报告<span className="cursor-blink">_</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer
-        className="relative z-10 text-center py-6 text-xs font-medium"
-        style={{ color: "#A89EC4" }}
+        className="px-4 py-5 border-t"
+        style={{ borderColor: "var(--border)" }}
       >
-        <div className="mb-1">
-          <span>仅供娱乐，不构成投资建议</span>
-          <span className="mx-2">·</span>
-          <a
-            href="https://github.com/bulsico/lai-shi-lu"
-            style={{ color: "#7C3AED" }}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub 开源 ↗
-          </a>
-        </div>
-        <div>
-          Robinhood 用户？自己跑本地版 →{" "}
-          <a
-            href="https://github.com/bulsico/lai-shi-lu#portable-skill"
-            style={{ color: "#7C3AED" }}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            查看说明 ↗
-          </a>
+        <div
+          className="max-w-lg mx-auto flex flex-wrap justify-between gap-y-2 gap-x-4 text-xs"
+          style={{
+            color: "var(--text-dim)",
+            fontFamily: '"JetBrains Mono", monospace',
+          }}
+        >
+          <span>// 仅供娱乐，不构成投资建议</span>
+          <div className="flex gap-4">
+            <a
+              href="https://github.com/bulsico/lai-shi-lu"
+              style={{ color: "var(--accent)" }}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GITHUB ↗
+            </a>
+            <a
+              href="https://github.com/bulsico/lai-shi-lu#portable-skill"
+              style={{ color: "var(--text-muted)" }}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              PORTABLE ↗
+            </a>
+          </div>
         </div>
       </footer>
     </main>

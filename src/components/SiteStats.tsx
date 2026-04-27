@@ -2,19 +2,23 @@
 
 import { useEffect, useState } from "react";
 
-const BAR_GRADIENTS = [
-  "linear-gradient(90deg, #FF2D78, #FF85A1)",
-  "linear-gradient(90deg, #7C3AED, #A78BFA)",
-  "linear-gradient(90deg, #06B6D4, #67E8F9)",
-  "linear-gradient(90deg, #00C853, #69F0AE)",
-  "linear-gradient(90deg, #FF9500, #FFD60A)",
-  "linear-gradient(90deg, #FF2D55, #FF9580)",
+const BAR_COLORS = [
+  "#FF1A2E",
+  "#FF8800",
+  "#FFD000",
+  "#00E85A",
+  "#00C8FF",
+  "#FF69B4",
 ];
 
 interface Stats {
   total: number;
   archetypes: { label: string; count: number }[];
 }
+
+const MONO: React.CSSProperties = {
+  fontFamily: '"JetBrains Mono", monospace',
+};
 
 export default function SiteStats() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -29,39 +33,50 @@ export default function SiteStats() {
   if (!stats || stats.total === 0) return null;
 
   return (
-    <div className="border-t px-4 py-6" style={{ borderColor: "#E0D0FF" }}>
+    <div
+      className="border-t px-4 py-6"
+      style={{ borderColor: "var(--border)" }}
+    >
       <div className="max-w-lg mx-auto">
-        <p className="text-center text-xs mb-4 font-semibold" style={{ color: "#A89EC4" }}>
-          已为{" "}
-          <span
-            className="font-black text-sm"
-            style={{
-              background: "linear-gradient(135deg, #FF2D78, #7C3AED)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
+        <div
+          className="text-xs tracking-widest mb-4"
+          style={{ color: "var(--text-dim)", ...MONO }}
+        >
+          REPORTS_GENERATED ={" "}
+          <span style={{ color: "var(--accent)", fontWeight: 700 }}>
             {stats.total}
-          </span>{" "}
-          位交易员生成过报告
-        </p>
+          </span>
+        </div>
+
         {stats.archetypes.length > 0 && (
           <div className="space-y-2.5">
             {stats.archetypes.map((a, i) => {
               const pct = Math.round((a.count / stats.total) * 100);
+              const color = BAR_COLORS[i % BAR_COLORS.length];
               return (
                 <div key={a.label} className="flex items-center gap-3">
-                  <span className="text-xs w-28 shrink-0 text-right font-semibold" style={{ color: "#6B5F80" }}>
+                  <span
+                    className="text-xs w-28 shrink-0 text-right"
+                    style={{ color: "var(--text-muted)", fontFamily: '"Noto Sans SC", sans-serif' }}
+                  >
                     {a.label}
                   </span>
-                  <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "#E0D0FF" }}>
+                  <div
+                    className="flex-1 overflow-hidden"
+                    style={{ height: 3, background: "var(--border)" }}
+                  >
                     <div
-                      className="h-full rounded-full"
-                      style={{ width: `${pct}%`, background: BAR_GRADIENTS[i % BAR_GRADIENTS.length] }}
+                      style={{
+                        width: `${pct}%`,
+                        height: "100%",
+                        background: color,
+                      }}
                     />
                   </div>
-                  <span className="text-xs w-8 shrink-0 font-bold" style={{ color: "#7C3AED" }}>
+                  <span
+                    className="text-xs w-8 shrink-0 font-bold"
+                    style={{ color, ...MONO }}
+                  >
                     {pct}%
                   </span>
                 </div>
