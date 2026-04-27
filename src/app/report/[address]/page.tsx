@@ -46,42 +46,62 @@ export default function ReportPage() {
   const [error, setError] = useState("");
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
   const msgIdx = useRef(0);
-  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    const msgTimer = setInterval(() => {
-      msgIdx.current = (msgIdx.current + 1) % LOADING_MESSAGES.length;
-      setLoadingMsg(LOADING_MESSAGES[msgIdx.current]);
-    }, 3500);
-
     if (!sessionId) {
       loadReport();
-      clearInterval(msgTimer);
       return;
     }
 
-    pollTimer.current = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/status/${sessionId}`);
-        const data = await res.json();
-        if (data.status === "done") {
-          clearInterval(pollTimer.current!);
-          clearInterval(msgTimer);
-          loadReport();
-        } else if (data.status === "error") {
-          clearInterval(pollTimer.current!);
-          clearInterval(msgTimer);
-          setError(data.error ?? "生成失败，请返回重试");
-          setLoading(false);
+    let cancelled = false;
+    let msgTimer: ReturnType<typeof setInterval> | null = null;
+    let polling: ReturnType<typeof setInterval> | null = null;
+
+    function startPolling() {
+      if (cancelled) return;
+      msgTimer = setInterval(() => {
+        msgIdx.current = (msgIdx.current + 1) % LOADING_MESSAGES.length;
+        setLoadingMsg(LOADING_MESSAGES[msgIdx.current]);
+      }, 3500);
+
+      polling = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/status/${sessionId}`);
+          const data = await res.json();
+          if (data.status === "done") {
+            clearInterval(polling!);
+            clearInterval(msgTimer!);
+            loadReport();
+          } else if (data.status === "error") {
+            clearInterval(polling!);
+            clearInterval(msgTimer!);
+            setError(data.error ?? "生成失败，请返回重试");
+            setLoading(false);
+          }
+        } catch {
+          // ignore transient poll errors
         }
-      } catch {
-        // ignore transient poll errors
-      }
-    }, 2500);
+      }, 2500);
+    }
+
+    // Always check if the report already exists before showing the loading animation
+    fetch(`/api/report/${address}`)
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          const data = await res.json();
+          setReport(data);
+          setLoading(false);
+        } else {
+          startPolling();
+        }
+      })
+      .catch(() => { if (!cancelled) startPolling(); });
 
     return () => {
-      clearInterval(pollTimer.current!);
-      clearInterval(msgTimer);
+      cancelled = true;
+      if (polling) clearInterval(polling);
+      if (msgTimer) clearInterval(msgTimer);
     };
   }, [sessionId]);
 
