@@ -108,14 +108,17 @@ export function computeStats(
   const to = fills[fills.length - 1].date;
   const days = daysBetween(from, to);
 
-  const totalFills = fills.length;
-  const totalRealizedPnl = fills.reduce((s, f) => s + f.closedPnl, 0);
-  const totalFees = fills.reduce((s, f) => s + f.feeUsd, 0);
+  // Exclude HYPE airdrop spot fills (@107) — cost basis ~$0, not trading income
+  const tradingFills = fills.filter((f) => !f.isAirdrop);
+
+  const totalFills = tradingFills.length;
+  const totalRealizedPnl = tradingFills.reduce((s, f) => s + f.closedPnl, 0);
+  const totalFees = tradingFills.reduce((s, f) => s + f.feeUsd, 0);
   const netPnl = totalRealizedPnl - totalFees;
-  const liquidations = fills.filter((f) => f.isLiquidation).length;
+  const liquidations = tradingFills.filter((f) => f.isLiquidation).length;
 
   // Closed P&L fills only (exclude 0 closedPnl = opening trades)
-  const closedFills = fills.filter((f) => Math.abs(f.closedPnl) > 0.001);
+  const closedFills = tradingFills.filter((f) => Math.abs(f.closedPnl) > 0.001);
   const wins = closedFills.filter((f) => f.closedPnl > 0);
   const losses = closedFills.filter((f) => f.closedPnl <= 0);
   const winRate =
@@ -132,7 +135,7 @@ export function computeStats(
   // Fills per day
   const avgFillsPerDay = totalFills / days;
   const fillsByDate: Record<string, number> = {};
-  for (const f of fills) {
+  for (const f of tradingFills) {
     fillsByDate[f.date] = (fillsByDate[f.date] ?? 0) + 1;
   }
   let peakFillsInOneDay = 0;
@@ -145,11 +148,11 @@ export function computeStats(
   }
 
   // Unique assets (excluding spot names for simplicity)
-  const uniqueAssets = new Set(fills.map((f) => f.coin)).size;
+  const uniqueAssets = new Set(tradingFills.map((f) => f.coin)).size;
 
   // By asset
   const assetMap: Record<string, { pnls: number[]; fees: number; fills: number }> = {};
-  for (const f of fills) {
+  for (const f of tradingFills) {
     if (!assetMap[f.coin]) assetMap[f.coin] = { pnls: [], fees: 0, fills: 0 };
     assetMap[f.coin].fills++;
     assetMap[f.coin].fees += f.feeUsd;
@@ -188,7 +191,7 @@ export function computeStats(
 
   // By month
   const monthMap: Record<string, { pnl: number; fills: number }> = {};
-  for (const f of fills) {
+  for (const f of tradingFills) {
     const month = f.date.slice(0, 7);
     if (!monthMap[month]) monthMap[month] = { pnl: 0, fills: 0 };
     monthMap[month].pnl += f.closedPnl - f.feeUsd;

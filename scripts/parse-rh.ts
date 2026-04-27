@@ -40,6 +40,7 @@ interface RHRow {
   transCode: string;
   qty: number;
   price: number;
+  amount: number;     // total USD value of the transaction (handles options 100× multiplier)
 }
 
 function splitLine(line: string): string[] {
@@ -68,7 +69,7 @@ function parseNum(s: string): number {
   return parseFloat(s.replace(/[$, ]/g, "")) || 0;
 }
 
-// Robinhood crypto order export: UUID, Time Entered, Symbol, Side, Quantity, State, ...Average Price
+// Robinhood crypto order export: UUID, Time Entered, Symbol, Side, Quantity, State, ...Average Price, Notional
 function parseCryptoOrderCSV(lines: string[], header: string[]): RHRow[] {
   const col = (name: string): number => header.indexOf(name);
   const timeIdx = col("time entered");
@@ -77,6 +78,7 @@ function parseCryptoOrderCSV(lines: string[], header: string[]): RHRow[] {
   const qtyIdx = col("quantity");
   const stateIdx = col("state");
   const avgPriceIdx = col("average price");
+  const notionalIdx = col("notional");
 
   const rows: RHRow[] = [];
   for (let i = 1; i < lines.length; i++) {
@@ -97,7 +99,10 @@ function parseCryptoOrderCSV(lines: string[], header: string[]): RHRow[] {
     const price = Math.abs(parseNum(parts[avgPriceIdx] ?? ""));
     if (qty === 0) continue;
 
-    rows.push({ date, instrument, transCode, qty, price });
+    const notional = notionalIdx >= 0 ? Math.abs(parseNum(parts[notionalIdx] ?? "")) : 0;
+    const amount = notional || price * qty;
+
+    rows.push({ date, instrument, transCode, qty, price, amount });
   }
   return rows.sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -126,6 +131,7 @@ function parseRHCSV(content: string): RHRow[] {
   const codeIdx = col("trans code", "type", "side");
   const qtyIdx = col("quantity", "qty");
   const priceIdx = col("price");
+  const amountIdx = col("amount");
 
   if (dateIdx < 0 || instrIdx < 0 || codeIdx < 0 || qtyIdx < 0) {
     throw new Error(
@@ -141,12 +147,13 @@ function parseRHCSV(content: string): RHRow[] {
     const transCode = (parts[codeIdx] ?? "").toUpperCase().replace(/\s+/g, "");
     const qty = Math.abs(parseNum(parts[qtyIdx] ?? ""));
     const price = priceIdx >= 0 ? Math.abs(parseNum(parts[priceIdx] ?? "")) : 0;
+    const amount = amountIdx >= 0 ? Math.abs(parseNum(parts[amountIdx] ?? "")) : price * qty;
 
     if (!instrument || !transCode || qty === 0) continue;
     const date = normalizeDate(rawDate);
     if (!date) continue;
 
-    rows.push({ date, instrument, transCode, qty, price });
+    rows.push({ date, instrument, transCode, qty, price, amount });
   }
 
   return rows.sort((a, b) => a.date.localeCompare(b.date));
@@ -179,12 +186,15 @@ function runFIFO(rows: RHRow[]): ClosedTrade[] {
   const closed: ClosedTrade[] = [];
 
   for (const row of rows) {
-    const { instrument: coin, transCode, qty, price, date } = row;
+    const { instrument: coin, transCode, qty, price, amount, date } = row;
+    // Use amount/qty as per-unit cost so options (price-per-share × 100 × contracts)
+    // and stocks (price × shares) are both handled correctly via the Amount column.
+    const unitCost = amount > 0 ? amount / qty : price;
 
     if (BUY_CODES.has(transCode)) {
       // Open long
       if (!longs[coin]) longs[coin] = [];
-      longs[coin].push({ price, qty, date });
+      longs[coin].push({ price: unitCost, qty, date });
 
     } else if (SELL_CODES.has(transCode)) {
       // Close long via FIFO
@@ -193,7 +203,7 @@ function runFIFO(rows: RHRow[]): ClosedTrade[] {
       while (remaining > 0 && longs[coin].length > 0) {
         const lot = longs[coin][0];
         const filled = Math.min(remaining, lot.qty);
-        const pnl = (price - lot.price) * filled;
+        const pnl = (unitCost - lot.price) * filled;
         closed.push({ coin, dir: "LONG", pnl, date, price, size: filled });
         lot.qty -= filled;
         remaining -= filled;
@@ -207,7 +217,7 @@ function runFIFO(rows: RHRow[]): ClosedTrade[] {
     } else if (SHORT_OPEN_CODES.has(transCode)) {
       // Open short (sell to open)
       if (!shorts[coin]) shorts[coin] = [];
-      shorts[coin].push({ price, qty, date });
+      shorts[coin].push({ price: unitCost, qty, date });
 
     } else if (SHORT_CLOSE_CODES.has(transCode)) {
       // Close short (buy to close)
@@ -216,7 +226,7 @@ function runFIFO(rows: RHRow[]): ClosedTrade[] {
       while (remaining > 0 && shorts[coin].length > 0) {
         const lot = shorts[coin][0];
         const filled = Math.min(remaining, lot.qty);
-        const pnl = (lot.price - price) * filled; // short profit = entry - exit
+        const pnl = (lot.price - unitCost) * filled; // short profit = entry - exit
         closed.push({ coin, dir: "SHORT", pnl, date, price, size: filled });
         lot.qty -= filled;
         remaining -= filled;
