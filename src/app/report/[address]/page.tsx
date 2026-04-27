@@ -72,10 +72,10 @@ export default function ReportPage() {
             clearInterval(polling!);
             clearInterval(msgTimer!);
             loadReport();
-          } else if (data.status === "error") {
+          } else if (data.status === "error" || !res.ok) {
             clearInterval(polling!);
             clearInterval(msgTimer!);
-            setError(data.error ?? "生成失败，请返回重试");
+            setError(data.error ?? "会话已失效，请返回重新生成");
             setLoading(false);
           }
         } catch {

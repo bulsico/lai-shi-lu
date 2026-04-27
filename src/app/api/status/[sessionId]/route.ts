@@ -20,14 +20,21 @@ export async function GET(
     const state = readState(sessionId);
     const running = isRunning(sessionId);
 
-    if (!running && state?.finishedAt) {
-      // Process exited but DB not updated yet — re-check report
+    if (!running) {
+      // Check if the report landed anyway (race between close handler and this poll)
       const report = await prisma.report.findUnique({ where: { address: job.address } });
       if (report?.markdown && report.markdown.length > 100) {
         await prisma.job.update({ where: { id: sessionId }, data: { status: "done" } });
         return Response.json({ status: "done", address: job.address });
       }
-      // Give it a few more seconds
+
+      // Process is dead and no report — if the job is old enough it's not just warming up
+      const age = Date.now() - job.createdAt.getTime();
+      if (age > 30_000) {
+        const errMsg = state?.finishedAt ? "生成失败，请返回重试" : "进程意外退出，请返回重新生成";
+        await prisma.job.update({ where: { id: sessionId }, data: { status: "error", error: errMsg } });
+        return Response.json({ status: "error", error: errMsg });
+      }
     }
   }
 
