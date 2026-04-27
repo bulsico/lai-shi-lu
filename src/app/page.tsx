@@ -21,8 +21,8 @@ export default function Home() {
   const [focused, setFocused] = useState(false);
   const [existingReport, setExistingReport] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) {
+    e?.preventDefault();
     setError("");
     const trimmed = address.trim();
     if (!trimmed.match(/^0x[0-9a-fA-F]{40}$/)) {
@@ -109,11 +109,12 @@ export default function Home() {
 
         {/* Form */}
         <div className="w-full max-w-lg">
-          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-0">
             <input
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !loading && handleSubmit()}
               placeholder="0x... 粘贴你的 Hyperliquid 地址"
               className="flex-1 px-4 py-3.5 text-sm outline-none w-full"
               style={{
@@ -131,7 +132,7 @@ export default function Home() {
               spellCheck={false}
             />
             <button
-              type="submit"
+              onClick={() => !loading && handleSubmit()}
               disabled={loading}
               className="px-6 py-3.5 font-bold text-sm tracking-widest whitespace-nowrap transition-colors"
               style={{
@@ -149,7 +150,7 @@ export default function Home() {
                 "分析 →"
               )}
             </button>
-          </form>
+          </div>
 
           {error && (
             <p
