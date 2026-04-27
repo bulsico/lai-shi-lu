@@ -30,7 +30,7 @@ export default function ReportRenderer({ markdown, address }: Props) {
                 <h2 className="flex items-center flex-wrap gap-x-3">
                   {children}
                   <a
-                    href={`https://hyperdash.info/trader/${address}`}
+                    href={`https://hyperdash.com/address/${address}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:opacity-80 transition-opacity"
