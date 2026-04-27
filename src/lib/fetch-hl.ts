@@ -34,11 +34,14 @@ const SPOT_PAIR_NAMES_FALLBACK: Record<string, string> = {
 
 async function fetchSpotNames(): Promise<Record<string, string>> {
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15_000);
     const res = await fetch(HL_API, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "spotMeta" }),
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timer));
     if (!res.ok) return SPOT_PAIR_NAMES_FALLBACK;
     const data = await res.json();
     const map: Record<string, string> = { ...SPOT_PAIR_NAMES_FALLBACK };
@@ -93,20 +96,32 @@ function resolveSpotName(coin: string, names: Record<string, string>): string {
 }
 
 function getFeeUsd(fill: RawFill): number {
-  const fee = parseFloat(fill.fee || "0");
+  const fee = safeFloat(fill.fee || "0");
   const feeToken = fill.feeToken || "USDC";
   if (STABLECOINS.has(feeToken)) return fee;
-  return fee * parseFloat(fill.px || "0");
+  return fee * safeFloat(fill.px || "0");
+}
+
+function safeFloat(s: string, fallback = 0): number {
+  const n = parseFloat(s);
+  return isNaN(n) ? fallback : n;
 }
 
 async function hlPost(body: object): Promise<RawFill[]> {
-  const res = await fetch(HL_API, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`HL API ${res.status}: ${await res.text()}`);
-  return res.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const res = await fetch(HL_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`HL API error ${res.status}`);
+    return res.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function fetchHLFills(address: string): Promise<{
@@ -153,13 +168,13 @@ export async function fetchHLFills(address: string): Promise<{
 
   const fills: HLFill[] = deduped.map((f) => ({
     coin: resolveSpotName(f.coin, spotNames),
-    price: parseFloat(f.px),
-    size: parseFloat(f.sz),
+    price: safeFloat(f.px),
+    size: safeFloat(f.sz),
     side: f.side,
     dir: f.dir,
     time: f.time,
     date: new Date(f.time).toISOString().split("T")[0],
-    closedPnl: parseFloat(f.closedPnl),
+    closedPnl: safeFloat(f.closedPnl),
     feeUsd: getFeeUsd(f),
     isLiquidation: !!f.liquidation,
     isAirdrop: f.coin === "@107",

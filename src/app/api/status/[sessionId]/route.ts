@@ -8,6 +8,10 @@ export async function GET(
 ) {
   const { sessionId } = await params;
 
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId)) {
+    return Response.json({ error: "not found" }, { status: 404 });
+  }
+
   const job = await prisma.job.findUnique({ where: { id: sessionId } });
   if (!job) return Response.json({ error: "not found" }, { status: 404 });
 

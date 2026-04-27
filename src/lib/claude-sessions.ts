@@ -3,6 +3,12 @@ import path from "path";
 
 const STATE_DIR = path.resolve(process.cwd(), "data/tmp/sessions");
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function assertSessionId(id: string) {
+  if (!UUID_RE.test(id)) throw new Error(`Invalid session ID`);
+}
+
 export function ensureStateDir() {
   fs.mkdirSync(STATE_DIR, { recursive: true });
 }
@@ -17,10 +23,12 @@ interface SessionState {
 }
 
 function statePath(sessionId: string) {
+  assertSessionId(sessionId);
   return path.join(STATE_DIR, `${sessionId}.json`);
 }
 
 export function logPathFor(sessionId: string) {
+  assertSessionId(sessionId);
   ensureStateDir();
   return path.join(STATE_DIR, `${sessionId}.log`);
 }

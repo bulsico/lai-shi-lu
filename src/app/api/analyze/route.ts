@@ -173,41 +173,44 @@ export async function POST(req: NextRequest) {
 
   claude.on("close", async (code) => {
     activeClaude = Math.max(0, activeClaude - 1);
-
-    const state = readState(sessionId);
-    writeState(sessionId, {
-      ...(state ?? { pid, startedAt: Date.now(), address: normalizedAddress }),
-      finishedAt: Date.now(),
-      exitCode: code ?? undefined,
-    });
-
-    // Read the generated report file (skill writes here)
-    let markdown = "";
-    if (existsSync(reportPath)) {
-      markdown = readFileSync(reportPath, "utf-8");
-    }
-
-    const status = markdown.length > 100 ? "done" : (code === 0 ? "done" : "error");
-
-    await prisma.job.update({
-      where: { id: sessionId },
-      data: { status, error: code !== 0 && !markdown ? `Exit code ${code}` : undefined },
-    });
-
-    if (markdown.length > 100) {
-      const usage = parseUsageFromLog(logPath);
-      await prisma.report.update({
-        where: { address: normalizedAddress },
-        data: {
-          markdown,
-          generatedAt: new Date(),
-          ...(usage && {
-            costUsd: usage.costUsd,
-            inputTokens: usage.inputTokens + usage.cacheCreateTokens + usage.cacheReadTokens,
-            outputTokens: usage.outputTokens,
-          }),
-        },
+    try {
+      const state = readState(sessionId);
+      writeState(sessionId, {
+        ...(state ?? { pid, startedAt: Date.now(), address: normalizedAddress }),
+        finishedAt: Date.now(),
+        exitCode: code ?? undefined,
       });
+
+      // Read the generated report file (skill writes here)
+      let markdown = "";
+      if (existsSync(reportPath)) {
+        markdown = readFileSync(reportPath, "utf-8");
+      }
+
+      const status = markdown.length > 100 ? "done" : (code === 0 ? "done" : "error");
+
+      await prisma.job.update({
+        where: { id: sessionId },
+        data: { status, error: code !== 0 && !markdown ? `Exit code ${code}` : undefined },
+      });
+
+      if (markdown.length > 100) {
+        const usage = parseUsageFromLog(logPath);
+        await prisma.report.update({
+          where: { address: normalizedAddress },
+          data: {
+            markdown,
+            generatedAt: new Date(),
+            ...(usage && {
+              costUsd: usage.costUsd,
+              inputTokens: usage.inputTokens + usage.cacheCreateTokens + usage.cacheReadTokens,
+              outputTokens: usage.outputTokens,
+            }),
+          },
+        });
+      }
+    } catch (err) {
+      console.error(`[session ${sessionId}] close handler error:`, err);
     }
   });
 
