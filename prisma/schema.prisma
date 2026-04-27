@@ -18,6 +18,9 @@ model Report {
   winRate      Float    @default(0)
   totalFills   Int      @default(0)
   uniqueAssets Int      @default(0)
+  costUsd      Float?
+  inputTokens  Int?
+  outputTokens Int?
   generatedAt  DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

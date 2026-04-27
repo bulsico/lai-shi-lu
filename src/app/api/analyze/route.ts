@@ -13,6 +13,7 @@ import {
 } from "@/lib/claude-sessions";
 import { fetchHLFills } from "@/lib/fetch-hl";
 import { computeStats } from "@/lib/analyze";
+import { parseUsageFromLog } from "@/lib/parse-usage";
 
 const PROJECT_CWD = process.cwd();
 const CLAUDE_BIN = "/home/exedev/.local/bin/claude";
@@ -194,9 +195,18 @@ export async function POST(req: NextRequest) {
     });
 
     if (markdown.length > 100) {
+      const usage = parseUsageFromLog(logPath);
       await prisma.report.update({
         where: { address: normalizedAddress },
-        data: { markdown, generatedAt: new Date() },
+        data: {
+          markdown,
+          generatedAt: new Date(),
+          ...(usage && {
+            costUsd: usage.costUsd,
+            inputTokens: usage.inputTokens + usage.cacheCreateTokens + usage.cacheReadTokens,
+            outputTokens: usage.outputTokens,
+          }),
+        },
       });
     }
   });

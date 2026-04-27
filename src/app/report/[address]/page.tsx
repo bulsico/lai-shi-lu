@@ -16,14 +16,14 @@ const LOADING_MESSAGES = [
   "马上好了，做好心理准备...",
 ];
 
-// Cost estimate: LLM only writes the narrative. Scripts handle all math.
-// ~17K fixed tokens (system prompt + skill + market context) + variable summary JSON.
-// Sonnet pricing: $3/M input, $15/M output.
-function estimateCost(uniqueAssets: number): string {
+function formatCost(costUsd: number | null, uniqueAssets: number): { value: string; isReal: boolean } {
+  if (costUsd !== null) {
+    return { value: `$${costUsd.toFixed(3)}`, isReal: true };
+  }
+  // Estimate: ~17K fixed + variable summary, Sonnet pricing
   const inputTokens = 17000 + uniqueAssets * 60;
-  const outputTokens = 1300;
-  const usd = (inputTokens * 3 + outputTokens * 15) / 1_000_000;
-  return `$${usd.toFixed(2)}`;
+  const usd = (inputTokens * 3 + 1300 * 15) / 1_000_000;
+  return { value: `~$${usd.toFixed(2)}`, isReal: false };
 }
 
 interface ReportData {
@@ -37,6 +37,9 @@ interface ReportData {
   totalFills: number;
   uniqueAssets: number;
   generatedAt: string;
+  costUsd: number | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
 }
 
 export default function ReportPage() {
@@ -255,16 +258,23 @@ export default function ReportPage() {
         </div>
 
         {/* Cost transparency */}
-        <div className="mt-6 flex items-center justify-center gap-2 flex-wrap">
-          <span className="text-xs px-2 py-1 rounded-full"
-            style={{ background: "#111", border: "1px solid #1a1a1a", color: "#3a3a3a" }}>
-            本次分析消耗约 <span style={{ color: "#444" }}>{estimateCost(report.uniqueAssets)}</span> 算力
-          </span>
-          <span className="text-xs px-2 py-1 rounded-full"
-            style={{ background: "#111", border: "1px solid #1a1a1a", color: "#3a3a3a" }}>
-            脚本算账，AI写报告，成本可控
-          </span>
-        </div>
+        {(() => {
+          const { value, isReal } = formatCost(report.costUsd, report.uniqueAssets);
+          return (
+            <div className="mt-6 flex items-center justify-center gap-2 flex-wrap">
+              <span className="text-xs px-2 py-1 rounded-full"
+                title={report.inputTokens ? `${report.inputTokens.toLocaleString()} 输入 · ${report.outputTokens?.toLocaleString()} 输出` : undefined}
+                style={{ background: "#111", border: "1px solid #1a1a1a", color: "#3a3a3a", cursor: report.inputTokens ? "help" : "default" }}>
+                本次分析消耗{isReal ? "" : "约"} <span style={{ color: "#555" }}>{value}</span> 算力
+                {isReal && <span style={{ color: "#2a2a2a" }}> ✓</span>}
+              </span>
+              <span className="text-xs px-2 py-1 rounded-full"
+                style={{ background: "#111", border: "1px solid #1a1a1a", color: "#2a2a2a" }}>
+                脚本算账，AI写报告，成本可控
+              </span>
+            </div>
+          );
+        })()}
 
         <p className="text-center text-xs mt-4" style={{ color: "#2a2a2a" }}>
           仅供娱乐 · 不构成投资建议 · 数据来自 Hyperliquid 公开API

@@ -26,5 +26,8 @@ export async function GET(
     totalFills: report.totalFills,
     uniqueAssets: report.uniqueAssets,
     generatedAt: report.generatedAt.toISOString(),
+    costUsd: report.costUsd ?? null,
+    inputTokens: report.inputTokens ?? null,
+    outputTokens: report.outputTokens ?? null,
   });
 }
