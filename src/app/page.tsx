@@ -168,8 +168,30 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Demo report */}
+        <div className="mt-10 w-full max-w-lg">
+          <div
+            className="text-xs mb-3 tracking-widest"
+            style={{ color: "var(--text-dim)", fontFamily: '"JetBrains Mono", monospace' }}
+          >
+            DEMO_REPORT
+          </div>
+          <a
+            href="/report/0x020ca66c30bec2c4fe3861a94e4db4a498a35872"
+            className="inline-block px-3 py-1.5 text-xs font-bold transition-opacity hover:opacity-80"
+            style={{
+              borderLeft: "3px solid var(--accent)",
+              background: "rgba(232,0,26,0.08)",
+              color: "var(--accent)",
+              fontFamily: '"Noto Sans SC", sans-serif',
+            }}
+          >
+            麻吉大哥的报告 →
+          </a>
+        </div>
+
         {/* Archetype chips */}
-        <div className="mt-12 w-full max-w-lg">
+        <div className="mt-8 w-full max-w-lg">
           <div
             className="text-xs mb-3 tracking-widest"
             style={{

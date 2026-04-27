@@ -257,10 +257,7 @@ export default function ReportPage() {
         className="px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-1"
         style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-card)" }}
       >
-        <span
-          className="text-xs break-all"
-          style={{ color: "var(--text-muted)", ...MONO }}
-        >
+        <span className="text-xs break-all" style={{ color: "var(--text-muted)", ...MONO }}>
           {report.address}
         </span>
         <a
