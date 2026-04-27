@@ -24,5 +24,7 @@ export async function GET(
     netPnl: report.netPnl,
     winRate: report.winRate,
     totalFills: report.totalFills,
+    uniqueAssets: report.uniqueAssets,
+    generatedAt: report.generatedAt.toISOString(),
   });
 }
