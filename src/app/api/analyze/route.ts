@@ -51,16 +51,27 @@ export async function POST(req: NextRequest) {
     where: { address: normalizedAddress, status: "pending" },
     orderBy: { createdAt: "desc" },
   });
-  if (runningJob && isRunning(runningJob.id)) {
-    return Response.json({ status: "generating", sessionId: runningJob.id });
+  if (runningJob) {
+    // Treat as in-progress if the process is alive OR the job was just created
+    // (covers the window before the Claude process starts and writes its session state)
+    const age = Date.now() - runningJob.createdAt.getTime();
+    if (age < 30_000 || isRunning(runningJob.id)) {
+      return Response.json({ status: "generating", sessionId: runningJob.id });
+    }
   }
 
-  // ── 3. Fetch fills + compute stats (fast, ~2–5s) ─────────────────────────
+  // ── 3. Reserve a session ID and create the job row immediately ────────────
+  // This closes the race window: concurrent requests hitting step 2 will find
+  // this pending row and be turned away before we waste time fetching fills.
   ensureStateDir();
   const tmpDir = path.join(PROJECT_CWD, "data/tmp");
   mkdirSync(tmpDir, { recursive: true });
   mkdirSync(path.join(PROJECT_CWD, "data/reports"), { recursive: true });
 
+  const sessionId = randomUUID();
+  await prisma.job.create({ data: { id: sessionId, address: normalizedAddress, status: "pending" } });
+
+  // ── 4. Fetch fills + compute stats (fast, ~2–5s) ─────────────────────────
   let summary;
   let openPositions;
   try {
@@ -71,42 +82,45 @@ export async function POST(req: NextRequest) {
     summary = computeStats(fills, normalizedAddress, truncated);
     openPositions = positions;
   } catch (e: unknown) {
+    await prisma.job.delete({ where: { id: sessionId } });
     const msg = e instanceof Error ? e.message : String(e);
     return Response.json({ error: `无法获取交易数据：${msg}` }, { status: 502 });
   }
 
-  // ── 4. Abuse guard ────────────────────────────────────────────────────────
+  // ── 5. Abuse guard ────────────────────────────────────────────────────────
+  const rejectEarly = async (body: object, status: number) => {
+    await prisma.job.delete({ where: { id: sessionId } });
+    return Response.json(body, { status });
+  };
+
   if (summary.totalFills === 0) {
-    return Response.json(
+    return rejectEarly(
       { error: "这个地址没有任何成交记录。请确认地址是否正确，或者该地址是否曾经在 Hyperliquid 上交易过。" },
-      { status: 422 }
+      422
     );
   }
   if (summary.totalFills < MIN_FILLS) {
-    return Response.json(
+    return rejectEarly(
       {
         error: `这个地址只有 ${summary.totalFills} 笔成交记录，太少了。至少需要 ${MIN_FILLS} 笔成交才能生成有意义的分析报告。`,
         fills: summary.totalFills,
       },
-      { status: 422 }
+      422
     );
   }
   if (summary.period.days < MIN_DAYS) {
-    return Response.json(
+    return rejectEarly(
       {
         error: `这个地址的成交历史只有 ${summary.period.days} 天，太短了。至少需要 ${MIN_DAYS} 天的记录才能分析交易模式。`,
         days: summary.period.days,
       },
-      { status: 422 }
+      422
     );
   }
 
-  // ── 5. Concurrency cap ────────────────────────────────────────────────────
+  // ── 6. Concurrency cap ────────────────────────────────────────────────────
   if (activeClaude >= MAX_CONCURRENT) {
-    return Response.json(
-      { error: "服务器当前分析任务较多，请稍等几分钟再试。" },
-      { status: 429 }
-    );
+    return rejectEarly({ error: "服务器当前分析任务较多，请稍等几分钟再试。" }, 429);
   }
 
   // ── 6. Upsert stats to DB ─────────────────────────────────────────────────
@@ -138,12 +152,9 @@ export async function POST(req: NextRequest) {
   const summaryPath = path.join(tmpDir, `${normalizedAddress}-summary.json`);
   writeFileSync(summaryPath, JSON.stringify({ ...summary, openPositions }, null, 2));
 
-  // ── 7. Spawn Claude ───────────────────────────────────────────────────────
-  const sessionId = randomUUID();
+  // ── 8. Spawn Claude ───────────────────────────────────────────────────────
   const logPath = logPathFor(sessionId);
   const reportPath = path.join(PROJECT_CWD, "data/reports", `${normalizedAddress}.md`);
-
-  await prisma.job.create({ data: { id: sessionId, address: normalizedAddress, status: "pending" } });
 
   const prompt = `/trade-roast ${normalizedAddress}`;
   const args = [
