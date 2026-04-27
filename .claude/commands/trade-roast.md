@@ -199,7 +199,7 @@ F级  建议认真考虑人生方向
 > 「{一句话，基于你最大的弱点定制的灵魂问题}」
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*报告由 [交易来时路](https://github.com/yourusername/lai-shi-lu) 生成*
+*报告由 [交易来时路](https://github.com/bulsico/lai-shi-lu) 生成*
 *数据截至：{to}*
 ```
 
@@ -208,7 +208,7 @@ F级  建议认真考虑人生方向
 ## 第三步：保存报告
 
 将报告（纯 Markdown）保存到：
-- 如果是 HL 地址：`data/reports/{address前8位}-{YYYY-MM-DD}.md`
+- 如果是 HL 地址：`data/reports/{完整地址小写}.md`（例：`data/reports/0xabcdef....md`）
 - 如果是 RH CSV：`data/reports/rh-{YYYY-MM-DD}.md`
 
 然后告知用户报告已保存，并输出报告的核心结论（类型 + 等级 + 净盈亏）作为摘要。
