@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "用AI蒸馏你的交易历史，回望你走过的每一步。输入你的 Hyperliquid 地址，获取专属交易人格测评报告。",
   openGraph: {
     title: "交易来时路",
-    description: "用AI蒸馏你的交易历史，照出你是什么档次的交易猫",
+    description: "用AI蒸馏你的交易历史，照出你是什么档次的交易员",
     type: "website",
   },
 };

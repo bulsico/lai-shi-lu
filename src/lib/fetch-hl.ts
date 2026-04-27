@@ -15,7 +15,8 @@ const HL_API = "https://api.hyperliquid.xyz/info";
 // Heavy traders with >10k fills will get incomplete history — we note this in the report.
 const MAX_FILLS_WARNING = 9500;
 
-const SPOT_PAIR_NAMES: Record<string, string> = {
+// Fallback static map — used if spotMeta fetch fails
+const SPOT_PAIR_NAMES_FALLBACK: Record<string, string> = {
   "107": "HYPE/USDC",
   "188": "UPUMP/USDC",
   "150": "USDE/USDC",
@@ -30,6 +31,27 @@ const SPOT_PAIR_NAMES: Record<string, string> = {
   "166": "USDT0/USDC",
   "305": "HWHLP/USDC",
 };
+
+async function fetchSpotNames(): Promise<Record<string, string>> {
+  try {
+    const res = await fetch(HL_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "spotMeta" }),
+    });
+    if (!res.ok) return SPOT_PAIR_NAMES_FALLBACK;
+    const data = await res.json();
+    const map: Record<string, string> = { ...SPOT_PAIR_NAMES_FALLBACK };
+    for (const token of data.tokens ?? []) {
+      if (token.index !== undefined && token.name) {
+        map[String(token.index)] = `${token.name}/USDC`;
+      }
+    }
+    return map;
+  } catch {
+    return SPOT_PAIR_NAMES_FALLBACK;
+  }
+}
 
 const STABLECOINS = new Set(["USDC", "USDE", "USDH"]);
 
@@ -62,10 +84,10 @@ interface RawFill {
   liquidation?: { liquidatedUser: string };
 }
 
-function resolveSpotName(coin: string): string {
+function resolveSpotName(coin: string, names: Record<string, string>): string {
   if (coin.startsWith("@")) {
     const num = coin.slice(1);
-    return (SPOT_PAIR_NAMES[num] ?? coin) + " spot";
+    return (names[num] ?? coin) + " spot";
   }
   return coin;
 }
@@ -91,11 +113,12 @@ export async function fetchHLFills(address: string): Promise<{
   fills: HLFill[];
   truncated: boolean;
 }> {
-  const allRaw: RawFill[] = [];
+  const [page1, spotNames] = await Promise.all([
+    hlPost({ type: "userFills", user: address, aggregateByTime: true }),
+    fetchSpotNames(),
+  ]);
 
-  // Page 1
-  const page1 = await hlPost({ type: "userFills", user: address, aggregateByTime: true });
-  allRaw.push(...page1);
+  const allRaw: RawFill[] = [...page1];
 
   // Paginate while page size == 2000 (more pages exist)
   let lastPage = page1;
@@ -129,7 +152,7 @@ export async function fetchHLFills(address: string): Promise<{
   deduped.sort((a, b) => a.time - b.time);
 
   const fills: HLFill[] = deduped.map((f) => ({
-    coin: resolveSpotName(f.coin),
+    coin: resolveSpotName(f.coin, spotNames),
     price: parseFloat(f.px),
     size: parseFloat(f.sz),
     side: f.side,

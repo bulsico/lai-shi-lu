@@ -9,7 +9,7 @@ const LOADING_MESSAGES = [
   "AI在研究你的操作...",
   "正在给你的仓位做CT扫描...",
   "计算你的交易DNA...",
-  "确认你是哪种交易猫...",
+  "确认你是哪种交易员...",
   "AI：麻了，这数据有点抽象...",
   "正在润色毒舌评语...",
   "最后检查一遍，确保数据准确...",
@@ -252,6 +252,28 @@ export default function ReportPage() {
         </div>
       </div>
 
+      {/* Address bar */}
+      <div
+        className="px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-1"
+        style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-card)" }}
+      >
+        <span
+          className="text-xs break-all"
+          style={{ color: "var(--text-muted)", ...MONO }}
+        >
+          {report.address}
+        </span>
+        <a
+          href={`https://hyperdash.info/trader/${report.address}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs shrink-0 hover:opacity-80 transition-opacity"
+          style={{ color: "var(--gold)", ...MONO }}
+        >
+          Hyperdash ↗
+        </a>
+      </div>
+
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Truncation warning */}
@@ -333,7 +355,7 @@ export default function ReportPage() {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = `交易来时路_${report.address.slice(0, 8)}.md`;
+                a.download = `HL_交易来时路_${report.address}.md`;
                 a.click();
                 URL.revokeObjectURL(url);
               }}
