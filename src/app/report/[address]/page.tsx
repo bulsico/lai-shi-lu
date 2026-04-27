@@ -16,15 +16,6 @@ const LOADING_MESSAGES = [
   "马上好了，做好心理准备...",
 ];
 
-function formatCost(costUsd: number | null, uniqueAssets: number): { value: string; isReal: boolean } {
-  if (costUsd !== null) {
-    return { value: `$${costUsd.toFixed(3)}`, isReal: true };
-  }
-  // Estimate: ~17K fixed + variable summary, Sonnet pricing
-  const inputTokens = 17000 + uniqueAssets * 60;
-  const usd = (inputTokens * 3 + 1300 * 15) / 1_000_000;
-  return { value: `~$${usd.toFixed(2)}`, isReal: false };
-}
 
 interface ReportData {
   address: string;
@@ -35,7 +26,6 @@ interface ReportData {
   netPnl: number;
   winRate: number;
   totalFills: number;
-  uniqueAssets: number;
   generatedAt: string;
   costUsd: number | null;
   inputTokens: number | null;
@@ -257,24 +247,20 @@ export default function ReportPage() {
           </div>
         </div>
 
-        {/* Cost transparency */}
-        {(() => {
-          const { value, isReal } = formatCost(report.costUsd, report.uniqueAssets);
-          return (
-            <div className="mt-6 flex items-center justify-center gap-2 flex-wrap">
-              <span className="text-xs px-2 py-1 rounded-full"
-                title={report.inputTokens ? `${report.inputTokens.toLocaleString()} 输入 · ${report.outputTokens?.toLocaleString()} 输出` : undefined}
-                style={{ background: "#111", border: "1px solid #1a1a1a", color: "#3a3a3a", cursor: report.inputTokens ? "help" : "default" }}>
-                本次分析消耗{isReal ? "" : "约"} <span style={{ color: "#555" }}>{value}</span> 算力
-                {isReal && <span style={{ color: "#2a2a2a" }}> ✓</span>}
-              </span>
-              <span className="text-xs px-2 py-1 rounded-full"
-                style={{ background: "#111", border: "1px solid #1a1a1a", color: "#2a2a2a" }}>
-                脚本算账，AI写报告，成本可控
-              </span>
-            </div>
-          );
-        })()}
+        {/* Cost transparency — only shown when real cost is available */}
+        {report.costUsd !== null && (
+          <div className="mt-6 flex items-center justify-center gap-2 flex-wrap">
+            <span className="text-xs px-2 py-1 rounded-full"
+              title={`${report.inputTokens?.toLocaleString()} 输入 · ${report.outputTokens?.toLocaleString()} 输出`}
+              style={{ background: "#111", border: "1px solid #1a1a1a", color: "#3a3a3a", cursor: "help" }}>
+              本次分析消耗 <span style={{ color: "#555" }}>${report.costUsd.toFixed(3)}</span> 算力
+            </span>
+            <span className="text-xs px-2 py-1 rounded-full"
+              style={{ background: "#111", border: "1px solid #1a1a1a", color: "#2a2a2a" }}>
+              脚本算账，AI写报告，成本可控
+            </span>
+          </div>
+        )}
 
         <p className="text-center text-xs mt-4" style={{ color: "#2a2a2a" }}>
           仅供娱乐 · 不构成投资建议 · 数据来自 Hyperliquid 公开API
