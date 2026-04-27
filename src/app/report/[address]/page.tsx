@@ -96,7 +96,9 @@ export default function ReportPage() {
           startPolling();
         }
       })
-      .catch(() => { if (!cancelled) startPolling(); });
+      .catch(() => {
+        if (!cancelled) startPolling();
+      });
 
     return () => {
       cancelled = true;
@@ -124,7 +126,7 @@ export default function ReportPage() {
 
   function handleShare() {
     if (!report) return;
-    const text = `刚用AI分析了我的 Hyperliquid 交易历史\n\n我的交易类型：「${report.archetypeLabel}」\n综合评级：${report.grade}级 · 胜率：${(report.winRate * 100).toFixed(1)}%\n\n交易来时路 → lai-shi-lu.com`;
+    const text = `刚用AI分析了我的 Hyperliquid 交易历史\n\n我的交易类型：「${report.archetypeLabel}」\n综合评级：${report.grade}级 · 胜率：${(report.winRate * 100).toFixed(1)}%\n\n交易来时路 → zhenghuo.exe.xyz`;
     const encoded = encodeURIComponent(text);
     window.open(`https://twitter.com/intent/tweet?text=${encoded}`, "_blank");
   }
@@ -135,7 +137,16 @@ export default function ReportPage() {
         className="min-h-screen flex flex-col items-center justify-center px-4"
         style={{ background: "var(--bg)" }}
       >
-        <div style={{ height: 3, background: "var(--accent)", position: "fixed", top: 0, left: 0, right: 0 }} />
+        <div
+          style={{
+            height: 3,
+            background: "var(--accent)",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+          }}
+        />
         <div className="w-full max-w-sm">
           <div
             className="text-xs tracking-widest mb-4"
@@ -172,10 +183,16 @@ export default function ReportPage() {
             </span>
             <span>约5分钟</span>
           </div>
-          <p className="text-xs mt-6" style={{ color: "var(--text-dim)", ...MONO }}>
+          <p
+            className="text-xs mt-6"
+            style={{ color: "var(--text-dim)", ...MONO }}
+          >
             // 可关闭此页面，稍后用相同 URL 查看报告
           </p>
-          <p className="text-xs mt-1" style={{ color: "var(--text-dim)", ...MONO }}>
+          <p
+            className="text-xs mt-1"
+            style={{ color: "var(--text-dim)", ...MONO }}
+          >
             // HL API 仅返回最近约 10,000 条成交记录
           </p>
         </div>
@@ -189,12 +206,27 @@ export default function ReportPage() {
         className="min-h-screen flex flex-col items-center justify-center px-4 text-center"
         style={{ background: "var(--bg)" }}
       >
-        <div style={{ height: 3, background: "var(--accent)", position: "fixed", top: 0, left: 0, right: 0 }} />
+        <div
+          style={{
+            height: 3,
+            background: "var(--accent)",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+          }}
+        />
         <div
           className="w-full max-w-sm p-6 border"
-          style={{ borderColor: "var(--accent)", borderLeft: "4px solid var(--accent)" }}
+          style={{
+            borderColor: "var(--accent)",
+            borderLeft: "4px solid var(--accent)",
+          }}
         >
-          <div className="text-xs tracking-widest mb-3" style={{ color: "var(--accent)", ...MONO }}>
+          <div
+            className="text-xs tracking-widest mb-3"
+            style={{ color: "var(--accent)", ...MONO }}
+          >
             ERROR
           </div>
           <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
@@ -216,7 +248,7 @@ export default function ReportPage() {
 
   const processedMarkdown = report.markdown.replace(
     /`0x[0-9a-fA-F]+\.\.\.`/,
-    `\`${report.address}\``
+    `\`${report.address}\``,
   );
 
   return (
@@ -235,7 +267,10 @@ export default function ReportPage() {
         <a
           href="/"
           className="text-sm font-black"
-          style={{ color: "var(--text)", fontFamily: '"Noto Sans SC", sans-serif' }}
+          style={{
+            color: "var(--text)",
+            fontFamily: '"Noto Sans SC", sans-serif',
+          }}
         >
           ← 交易来时路
         </a>
@@ -272,7 +307,8 @@ export default function ReportPage() {
               fontFamily: '"Noto Sans SC", sans-serif',
             }}
           >
-            ⚠ 你的成交记录超过 10,000 笔，本报告仅覆盖最近 10k 条数据，不代表完整交易历史。
+            ⚠ 你的成交记录超过 10,000 笔，本报告仅覆盖最近 10k
+            条数据，不代表完整交易历史。
           </div>
         )}
 
@@ -282,9 +318,15 @@ export default function ReportPage() {
         {/* Share card */}
         <div
           className="mt-10 p-5 border"
-          style={{ borderColor: "var(--border)", borderLeft: "3px solid var(--accent)" }}
+          style={{
+            borderColor: "var(--border)",
+            borderLeft: "3px solid var(--accent)",
+          }}
         >
-          <p className="text-sm font-semibold mb-4" style={{ color: "var(--text-muted)" }}>
+          <p
+            className="text-sm font-semibold mb-4"
+            style={{ color: "var(--text-muted)" }}
+          >
             报告已生成，分享给朋友？
           </p>
           <div className="flex gap-2.5 flex-wrap">
@@ -298,7 +340,7 @@ export default function ReportPage() {
             <button
               onClick={() => {
                 if (!report) return;
-                const text = `我的交易类型：「${report.archetypeLabel}」\n评级：${report.grade}级\n\n交易来时路帮我分析了我的链上交易历史\n数据不会骗人，AI也不会惯着你\n\nlai-shi-lu.com`;
+                const text = `我的交易类型：「${report.archetypeLabel}」\n评级：${report.grade}级\n\n交易来时路帮我分析了我的链上交易历史\n数据不会骗人，AI也不会惯着你\n\nzhenghuo.exe.xyz`;
                 navigator.clipboard.writeText(text);
               }}
               className="px-5 py-2.5 text-sm font-bold tracking-widest transition-opacity hover:opacity-80"
@@ -314,7 +356,9 @@ export default function ReportPage() {
             <button
               onClick={() => {
                 if (!report) return;
-                const blob = new Blob([report.markdown], { type: "text/markdown;charset=utf-8" });
+                const blob = new Blob([report.markdown], {
+                  type: "text/markdown;charset=utf-8",
+                });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
@@ -366,7 +410,8 @@ export default function ReportPage() {
           className="text-center text-xs mt-5"
           style={{ color: "var(--text-dim)", ...MONO }}
         >
-          // 仅供娱乐 · 不构成投资建议 · 数据来自 Hyperliquid 公开API · 仅含最近约 10,000 条成交记录
+          // 仅供娱乐 · 不构成投资建议 · 数据来自 Hyperliquid 公开API ·
+          仅含最近约 10,000 条成交记录
         </p>
       </div>
     </main>
@@ -402,7 +447,10 @@ function StatCard({
       </div>
       <div
         className="text-xs mt-1 font-semibold"
-        style={{ color: "var(--text-dim)", fontFamily: '"JetBrains Mono", monospace' }}
+        style={{
+          color: "var(--text-dim)",
+          fontFamily: '"JetBrains Mono", monospace',
+        }}
       >
         {label}
       </div>
