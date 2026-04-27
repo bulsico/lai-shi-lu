@@ -8,7 +8,7 @@
  *   import { computeStats } from './scripts/analyze'
  */
 
-import type { HLFill } from "@/lib/fetch-hl";
+import type { HLFill, OpenPosition } from "@/lib/fetch-hl";
 
 export interface AssetStat {
   asset: string;
@@ -84,6 +84,7 @@ export interface TradeSummary {
   ratings: Ratings;
   grade: string;
   gradeLabel: string;
+  openPositions?: OpenPosition[];
 }
 
 function daysBetween(from: string, to: string): number {

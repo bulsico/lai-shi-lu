@@ -11,7 +11,7 @@ import {
   isRunning,
   ensureStateDir,
 } from "@/lib/claude-sessions";
-import { fetchHLFills } from "@/lib/fetch-hl";
+import { fetchHLFills, fetchOpenPositions } from "@/lib/fetch-hl";
 import { computeStats } from "@/lib/analyze";
 import { parseUsageFromLog } from "@/lib/parse-usage";
 
@@ -62,9 +62,14 @@ export async function POST(req: NextRequest) {
   mkdirSync(path.join(PROJECT_CWD, "data/reports"), { recursive: true });
 
   let summary;
+  let openPositions;
   try {
-    const { fills, truncated } = await fetchHLFills(normalizedAddress);
+    const [{ fills, truncated }, positions] = await Promise.all([
+      fetchHLFills(normalizedAddress),
+      fetchOpenPositions(normalizedAddress),
+    ]);
     summary = computeStats(fills, normalizedAddress, truncated);
+    openPositions = positions;
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     return Response.json({ error: `无法获取交易数据：${msg}` }, { status: 502 });
@@ -131,7 +136,7 @@ export async function POST(req: NextRequest) {
 
   // Write summary JSON for the skill to read
   const summaryPath = path.join(tmpDir, `${normalizedAddress}-summary.json`);
-  writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
+  writeFileSync(summaryPath, JSON.stringify({ ...summary, openPositions }, null, 2));
 
   // ── 7. Spawn Claude ───────────────────────────────────────────────────────
   const sessionId = randomUUID();

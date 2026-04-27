@@ -184,3 +184,49 @@ export async function fetchHLFills(address: string): Promise<{
   return { fills, truncated };
 }
 
+export interface OpenPosition {
+  coin: string;
+  side: "long" | "short";
+  size: number;
+  entryPrice: number;
+  positionValue: number;
+  unrealizedPnl: number;
+  liquidationPx: number | null;
+  leverage: number;
+}
+
+export async function fetchOpenPositions(address: string): Promise<OpenPosition[]> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const res = await fetch(HL_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "clearinghouseState", user: address }),
+      signal: controller.signal,
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const positions: OpenPosition[] = [];
+    for (const ap of data.assetPositions ?? []) {
+      const p = ap.position;
+      const szi = safeFloat(p.szi ?? "0");
+      if (szi === 0) continue;
+      positions.push({
+        coin: p.coin,
+        side: szi > 0 ? "long" : "short",
+        size: Math.abs(szi),
+        entryPrice: safeFloat(p.entryPx ?? "0"),
+        positionValue: safeFloat(p.positionValue ?? "0"),
+        unrealizedPnl: safeFloat(p.unrealizedPnl ?? "0"),
+        liquidationPx: p.liquidationPx ? safeFloat(p.liquidationPx) : null,
+        leverage: p.leverage?.value ?? 1,
+      });
+    }
+    return positions;
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
+}

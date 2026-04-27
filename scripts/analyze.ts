@@ -462,16 +462,21 @@ if (isMain) {
     fills: HLFill[];
     truncated: boolean;
     address?: string;
+    openPositions?: unknown[];
   };
 
   const address = raw.address ?? "unknown";
   const summary = computeStats(raw.fills, address, raw.truncated);
-  const json = JSON.stringify(summary, null, 2);
+  const out = raw.openPositions?.length
+    ? { ...summary, openPositions: raw.openPositions }
+    : summary;
+  const json = JSON.stringify(out, null, 2);
 
   if (outPath) {
     fs.writeFileSync(outPath, json);
+    const pos = raw.openPositions?.length ? ` · ${raw.openPositions.length} open position(s)` : "";
     console.error(`✓ Summary written to ${outPath}`);
-    console.error(`  ${summary.totalFills} fills · ${summary.uniqueAssets} assets · net P&L $${summary.netPnl.toFixed(0)} · ${summary.grade} grade · ${summary.archetypeLabel}`);
+    console.error(`  ${summary.totalFills} fills · ${summary.uniqueAssets} assets · net P&L $${summary.netPnl.toFixed(0)} · ${summary.grade} grade · ${summary.archetypeLabel}${pos}`);
   } else {
     console.log(json);
   }

@@ -71,20 +71,79 @@ function resolveSpotName(coin: string): string {
 }
 
 function getFeeUsd(fill: RawFill): number {
-  const fee = parseFloat(fill.fee || "0");
+  const fee = safeFloat(fill.fee || "0");
   const feeToken = fill.feeToken || "USDC";
   if (STABLECOINS.has(feeToken)) return fee;
-  return fee * parseFloat(fill.px || "0");
+  return fee * safeFloat(fill.px || "0");
+}
+
+function safeFloat(s: string, fallback = 0): number {
+  const n = parseFloat(s);
+  return isNaN(n) ? fallback : n;
 }
 
 async function hlPost(body: object): Promise<RawFill[]> {
-  const res = await fetch(HL_API, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`HL API ${res.status}: ${await res.text()}`);
-  return res.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const res = await fetch(HL_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`HL API error ${res.status}`);
+    return res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export interface OpenPosition {
+  coin: string;
+  side: "long" | "short";
+  size: number;
+  entryPrice: number;
+  positionValue: number;
+  unrealizedPnl: number;
+  liquidationPx: number | null;
+  leverage: number;
+}
+
+export async function fetchOpenPositions(address: string): Promise<OpenPosition[]> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const res = await fetch(HL_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "clearinghouseState", user: address }),
+      signal: controller.signal,
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const positions: OpenPosition[] = [];
+    for (const ap of data.assetPositions ?? []) {
+      const p = ap.position;
+      const szi = safeFloat(p.szi ?? "0");
+      if (szi === 0) continue;
+      positions.push({
+        coin: p.coin,
+        side: szi > 0 ? "long" : "short",
+        size: Math.abs(szi),
+        entryPrice: safeFloat(p.entryPx ?? "0"),
+        positionValue: safeFloat(p.positionValue ?? "0"),
+        unrealizedPnl: safeFloat(p.unrealizedPnl ?? "0"),
+        liquidationPx: p.liquidationPx ? safeFloat(p.liquidationPx) : null,
+        leverage: p.leverage?.value ?? 1,
+      });
+    }
+    return positions;
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function fetchHLFills(address: string): Promise<{
@@ -130,13 +189,13 @@ export async function fetchHLFills(address: string): Promise<{
 
   const fills: HLFill[] = deduped.map((f) => ({
     coin: resolveSpotName(f.coin),
-    price: parseFloat(f.px),
-    size: parseFloat(f.sz),
+    price: safeFloat(f.px),
+    size: safeFloat(f.sz),
     side: f.side,
     dir: f.dir,
     time: f.time,
     date: new Date(f.time).toISOString().split("T")[0],
-    closedPnl: parseFloat(f.closedPnl),
+    closedPnl: safeFloat(f.closedPnl),
     feeUsd: getFeeUsd(f),
     isLiquidation: !!f.liquidation,
     isAirdrop: f.coin === "@107",
@@ -161,9 +220,9 @@ if (isMain) {
     process.exit(1);
   }
 
-  console.error(`Fetching fills for ${address}...`);
-  fetchHLFills(address)
-    .then(({ fills, truncated }) => {
+  console.error(`Fetching fills + positions for ${address}...`);
+  Promise.all([fetchHLFills(address), fetchOpenPositions(address)])
+    .then(([{ fills, truncated }, openPositions]) => {
       if (truncated) {
         console.error(
           `⚠️  Warning: ${fills.length} fills returned — HL API cap (~10k) may be reached. Older fills are not available.`
@@ -171,8 +230,11 @@ if (isMain) {
       } else {
         console.error(`✓ ${fills.length} fills fetched`);
       }
+      if (openPositions.length > 0) {
+        console.error(`✓ ${openPositions.length} open position(s) fetched`);
+      }
 
-      const json = JSON.stringify({ fills, truncated }, null, 2);
+      const json = JSON.stringify({ address, fills, truncated, openPositions }, null, 2);
 
       if (outPath) {
         const fs = require("fs") as typeof import("fs");
