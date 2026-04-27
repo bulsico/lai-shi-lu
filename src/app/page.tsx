@@ -133,6 +133,7 @@ export default function Home() {
               onBlur={() => setFocused(false)}
               disabled={loading}
               spellCheck={false}
+              suppressHydrationWarning
             />
             <button
               onClick={() => { if (!loading) handleSubmit(); }}
