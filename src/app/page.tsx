@@ -21,8 +21,7 @@ export default function Home() {
   const [focused, setFocused] = useState(false);
   const [existingReport, setExistingReport] = useState(false);
 
-  async function handleSubmit(e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) {
-    e?.preventDefault();
+  async function handleSubmit() {
     setError("");
     const trimmed = address.trim();
     if (!trimmed.match(/^0x[0-9a-fA-F]{40}$/)) {
@@ -36,21 +35,25 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ address: trimmed }),
       });
-      const data = await res.json();
+      let data: Record<string, string> = {};
+      try { data = await res.json(); } catch { /* non-JSON body */ }
       if (!res.ok) {
-        setError(data.error ?? "请求失败，请稍后再试");
-        setLoading(false);
+        setError(data.error ?? `请求失败 (${res.status})，请稍后再试`);
         return;
       }
       if (data.status === "done") {
         setExistingReport(true);
         setTimeout(() => router.push(`/report/${trimmed.toLowerCase()}`), 1500);
         return;
-      } else if (data.sessionId) {
-        router.push(`/report/${trimmed.toLowerCase()}?session=${data.sessionId}`);
       }
+      if (data.sessionId) {
+        router.push(`/report/${trimmed.toLowerCase()}?session=${data.sessionId}`);
+        return;
+      }
+      setError("服务器返回异常，请刷新重试");
     } catch {
       setError("网络错误，请检查连接后重试");
+    } finally {
       setLoading(false);
     }
   }
@@ -114,7 +117,7 @@ export default function Home() {
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !loading && handleSubmit()}
+              onKeyDown={(e) => { if (e.key === "Enter" && !loading) handleSubmit(); }}
               placeholder="0x... 粘贴你的 Hyperliquid 地址"
               className="flex-1 px-4 py-3.5 text-sm outline-none w-full"
               style={{
@@ -132,9 +135,9 @@ export default function Home() {
               spellCheck={false}
             />
             <button
-              onClick={() => !loading && handleSubmit()}
+              onClick={() => { if (!loading) handleSubmit(); }}
               disabled={loading}
-              className="px-6 py-3.5 font-bold text-sm tracking-widest whitespace-nowrap transition-colors"
+              className="px-6 py-3.5 font-bold text-sm tracking-widest whitespace-nowrap"
               style={{
                 background: loading ? "var(--bg-card)" : "var(--accent)",
                 color: loading ? "var(--text-dim)" : "#fff",
@@ -142,7 +145,12 @@ export default function Home() {
                 cursor: loading ? "not-allowed" : "pointer",
                 fontFamily: '"JetBrains Mono", monospace',
                 letterSpacing: "0.06em",
+                transition: "opacity 0.1s, transform 0.1s",
+                WebkitTapHighlightColor: "transparent",
               }}
+              onMouseDown={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.opacity = "0.7"; }}
+              onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
             >
               {loading ? (
                 <>分析中<span className="cursor-blink">_</span></>
